@@ -160,6 +160,14 @@ namespace Zongsoft.Services
 			}
 		}
 
+		public bool HasService
+		{
+			get
+			{
+				return _service != null;
+			}
+		}
+
 		public Type[] ContractTypes
 		{
 			get
@@ -213,6 +221,11 @@ namespace Zongsoft.Services
 
 			if(builder != null)
 				return builder.Build(this);
+
+			var type = _serviceType;
+
+			if(type != null)
+				return Activator.CreateInstance(type);
 
 			return null;
 		}

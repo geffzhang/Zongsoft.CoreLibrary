@@ -25,9 +25,10 @@
  */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.ComponentModel;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Zongsoft.Common
@@ -244,7 +245,7 @@ namespace Zongsoft.Common
 		/// <param name="separator">要过滤掉的分隔符字符。</param>
 		/// <param name="throwExceptionOnFormat">指定当输入文本中含有非法字符时是否抛出<seealso cref="System.FormatException"/>异常。</param>
 		/// <returns>与<paramref name="text"/>等效的字节数组。</returns>
-		/// <exception cref="System.FormatException">当<param name="throwExceptionOnFormat"参数为真，并且<paramref name="text"/>参数中含有非空白字符或非指定的分隔符。</exception>
+		/// <exception cref="System.FormatException">当<paramref name="throwExceptionOnFormat"/>参数为真，并且<paramref name="text"/>参数中含有非空白字符或非指定的分隔符。</exception>
 		/// <remarks>该方法的实现始终忽略<paramref name="text"/>参数中的空白字符。</remarks>
 		public static byte[] FromHexString(string text, char separator, bool throwExceptionOnFormat)
 		{
@@ -374,21 +375,198 @@ namespace Zongsoft.Common
 
 		#region 对象解析
 
-		#region 获取方法
-		public static object GetValue(object target, string path)
+		#region 对象组装
+		[Obsolete("Please use Zongsoft.Runtime.Serialization.DictionarySerializer class.")]
+		public static T Populate<T>(IEnumerable<KeyValuePair<string, object>> dictionary, Func<T> creator = null, Action<ObjectResolvingContext> resolve = null)
 		{
-			if(target == null || path == null || path.Length < 1)
-				return target;
+			if(dictionary == null)
+				return default(T);
 
-			return GetValue(target, path.Split('.'), null);
+			var result = creator != null ? creator() : Activator.CreateInstance<T>();
+
+			if(resolve == null)
+			{
+				resolve = ctx =>
+				{
+					if(ctx.Direction == ObjectResolvingDirection.Get)
+					{
+						ctx.Value = ctx.GetMemberValue();
+
+						if(ctx.Value == null)
+						{
+							ctx.Value = Activator.CreateInstance(ctx.MemberType);
+
+							switch(ctx.Member.MemberType)
+							{
+								case MemberTypes.Field:
+									((FieldInfo)ctx.Member).SetValue(ctx.Container, ctx.Value);
+									break;
+								case MemberTypes.Property:
+									((PropertyInfo)ctx.Member).SetValue(ctx.Container, ctx.Value);
+									break;
+							}
+						}
+					}
+				};
+			}
+
+			foreach(KeyValuePair<string, object> entry in dictionary)
+			{
+				if(string.IsNullOrWhiteSpace(entry.Key))
+					continue;
+
+				SetValue(result, entry.Key, entry.Value, resolve);
+			}
+
+			return result;
 		}
 
-		public static object GetValue(object target, string path, Action<ObjectResolvingContext> resolve)
+		[Obsolete("Please use Zongsoft.Runtime.Serialization.DictionarySerializer class.")]
+		public static T Populate<T>(IDictionary dictionary, Func<T> creator = null, Action<ObjectResolvingContext> resolve = null)
 		{
-			if(target == null || path == null || path.Length < 1)
+			if(dictionary == null || dictionary.Count < 1)
+				return default(T);
+
+			return Populate<T>(Zongsoft.Collections.DictionaryExtension.ToDictionary<string, object>(dictionary), creator, resolve);
+		}
+
+		[Obsolete("Please use Zongsoft.Runtime.Serialization.DictionarySerializer class.")]
+		public static object Populate(IEnumerable<KeyValuePair<string, object>> dictionary, Type type, Func<object> creator = null, Action<ObjectResolvingContext> resolve = null)
+		{
+			if(dictionary == null)
+				return null;
+
+			var result = creator != null ? creator() : Activator.CreateInstance(type);
+
+			if(resolve == null)
+			{
+				resolve = ctx =>
+				{
+					if(ctx.Direction == ObjectResolvingDirection.Get)
+					{
+						ctx.Value = ctx.GetMemberValue();
+
+						if(ctx.Value == null)
+						{
+							ctx.Value = Activator.CreateInstance(ctx.MemberType);
+
+							switch(ctx.Member.MemberType)
+							{
+								case MemberTypes.Field:
+									((FieldInfo)ctx.Member).SetValue(ctx.Container, ctx.Value);
+									break;
+								case MemberTypes.Property:
+									((PropertyInfo)ctx.Member).SetValue(ctx.Container, ctx.Value);
+									break;
+							}
+						}
+					}
+				};
+			}
+
+			foreach(KeyValuePair<string, object> entry in dictionary)
+			{
+				if(string.IsNullOrWhiteSpace(entry.Key))
+					continue;
+
+				SetValue(result, entry.Key, entry.Value, resolve);
+			}
+
+			return result;
+		}
+
+		[Obsolete("Please use Zongsoft.Runtime.Serialization.DictionarySerializer class.")]
+		public static object Populate(IDictionary dictionary, Type type, Func<object> creator = null, Action<ObjectResolvingContext> resolve = null)
+		{
+			if(dictionary == null || dictionary.Count < 1)
+				return null;
+
+			return Populate(Zongsoft.Collections.DictionaryExtension.ToDictionary<string, object>(dictionary), creator, resolve);
+		}
+		#endregion
+
+		#region 获取方法
+		public static Type GetMemberType(object target, string text)
+		{
+			if(target == null)
+				return null;
+
+			if(string.IsNullOrWhiteSpace(text))
+				return target.GetType();
+
+			var type = target.GetType();
+			var parts = text.Split(new char[]{ '.' }, StringSplitOptions.RemoveEmptyEntries);
+
+			foreach(var part in parts)
+			{
+				var member = GetMember(type, part, (BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static), true);
+
+				if(member == null)
+					throw new ArgumentException(string.Format("The '{0}' member is not existed in the '{1}' type, the original text is '{2}'.", part, type.FullName, text));
+
+				switch(member.MemberType)
+				{
+					case MemberTypes.Field:
+						type = ((FieldInfo)member).FieldType;
+						break;
+					case MemberTypes.Property:
+						type = ((PropertyInfo)member).PropertyType;
+						break;
+				}
+			}
+
+			return type;
+		}
+
+		public static bool TryGetMemberType(object target, string text, out Type memberType)
+		{
+			memberType = null;
+
+			if(target == null)
+				return false;
+
+			memberType = target.GetType();
+
+			if(string.IsNullOrWhiteSpace(text))
+				return true;
+
+			var parts = text.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+
+			foreach(var part in parts)
+			{
+				var member = GetMember(memberType, part, (BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static), true);
+
+				if(member == null)
+					return false;
+
+				switch(member.MemberType)
+				{
+					case MemberTypes.Field:
+						memberType = ((FieldInfo)member).FieldType;
+						break;
+					case MemberTypes.Property:
+						memberType = ((PropertyInfo)member).PropertyType;
+						break;
+				}
+			}
+
+			return true;
+		}
+
+		public static object GetValue(object target, string text)
+		{
+			if(target == null || text == null || text.Length < 1)
 				return target;
 
-			return GetValue(target, path.Split('.'), resolve);
+			return GetValue(target, text.Split('.'), null);
+		}
+
+		public static object GetValue(object target, string text, Action<ObjectResolvingContext> resolve)
+		{
+			if(target == null || text == null || text.Length < 1)
+				return target;
+
+			return GetValue(target, text.Split('.'), resolve);
 		}
 
 		public static object GetValue(object target, string[] memberNames)
@@ -428,9 +606,10 @@ namespace Zongsoft.Common
 				if(context.Value == null)
 					continue;
 
-				context.Handled = false;
-				context.Name = memberName;
+				context.Handled = true;
+				context.MemberName = memberName;
 				context.Container = context.Value;
+				context.Value = null;
 
 				//解析对象成员
 				if(resolve == null)
@@ -442,6 +621,10 @@ namespace Zongsoft.Common
 					if(!context.Handled)
 						DefaultResolve(context);
 				}
+
+				//如果解析被终止则退出后续解析
+				if(context.IsTerminated)
+					break;
 			}
 
 			return context.Value;
@@ -449,17 +632,17 @@ namespace Zongsoft.Common
 		#endregion
 
 		#region 设置方法
-		public static void SetValue(object target, string path, object value)
+		public static void SetValue(object target, string text, object value)
 		{
-			SetValue(target, path, value, null);
+			SetValue(target, text, value, null);
 		}
 
-		public static void SetValue(object target, string path, object value, Action<ObjectResolvingContext> resolve)
+		public static void SetValue(object target, string text, object value, Action<ObjectResolvingContext> resolve)
 		{
-			if(target == null || path == null || path.Length < 1)
+			if(target == null || text == null || text.Length < 1)
 				return;
 
-			SetValue(target, path.Split('.'), value, resolve);
+			SetValue(target, text.Split('.'), value, resolve);
 		}
 
 		public static void SetValue(object target, string[] memberNames, object value)
@@ -479,7 +662,7 @@ namespace Zongsoft.Common
 				container = GetValue(target, memberNames, 0, memberNames.Length - 1, resolve);
 
 				if(container == null)
-					throw new InvalidOperationException(string.Format("The '{0}' member is not exists in object of '{1}' type.", string.Join(".", memberNames), target.GetType().FullName));
+					throw new InvalidOperationException(string.Format("The '{0}' member value is null of '{1}' type.", string.Join(".", memberNames, 0, memberNames.Length - 1), target.GetType().FullName));
 			}
 
 			//创建构件解析上下文对象
@@ -495,65 +678,41 @@ namespace Zongsoft.Common
 				if(!context.Handled)
 					DefaultResolve(context);
 			}
+
+			var member = context.Member;
+
+			if(member == null)
+				throw new ArgumentException(string.Format("The '{0}' member is not exists in the '{1}' type.", context.MemberName, context.Container.GetType().FullName));
+
+			switch(member.MemberType)
+			{
+				case MemberTypes.Field:
+					((FieldInfo)member).SetValue(context.Container, Zongsoft.Common.Convert.ConvertValue(context.Value, ((FieldInfo)member).FieldType));
+					break;
+				case MemberTypes.Property:
+					((PropertyInfo)member).SetValue(context.Container, Zongsoft.Common.Convert.ConvertValue(context.Value, ((PropertyInfo)member).PropertyType), null);
+					break;
+			}
 		}
 		#endregion
 
 		#region 私有方法
 		private static readonly Action<ObjectResolvingContext> DefaultResolve = (ctx) =>
 		{
-			if(ctx.Container == null)
-				return;
-
 			if(ctx.Direction == ObjectResolvingDirection.Get)
-			{
-				var member = GetMember(ctx.Container.GetType(), ctx.Name, (BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetField | BindingFlags.GetProperty), true);
-
-				if(member == null)
-					throw new ArgumentException(string.Format("The '{0}' member is not exists in the '{1}' type.", ctx.Name, ctx.Container.GetType().FullName));
-
-				switch(member.MemberType)
-				{
-					case MemberTypes.Field:
-						ctx.Value = ((FieldInfo)member).GetValue(ctx.Container);
-						break;
-					case MemberTypes.Property:
-						ctx.Value = ((PropertyInfo)member).GetValue(ctx.Container, null);
-						break;
-				}
-
-				ctx.Handled = true;
-			}
-			else if(ctx.Direction == ObjectResolvingDirection.Set)
-			{
-				var value = ctx.Value;
-				var member = GetMember(ctx.Container.GetType(), ctx.Name, (BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetField | BindingFlags.SetProperty), true);
-
-				if(member == null)
-					throw new ArgumentException(string.Format("The '{0}' member is not exists in the '{1}' type.", ctx.Name, ctx.Container.GetType().FullName));
-
-				switch(member.MemberType)
-				{
-					case MemberTypes.Field:
-						value = Zongsoft.Common.Convert.ConvertValue(ctx.Value, ((FieldInfo)member).FieldType);
-						((FieldInfo)member).SetValue(ctx.Container, value);
-						break;
-					case MemberTypes.Property:
-						value = Zongsoft.Common.Convert.ConvertValue(ctx.Value, ((PropertyInfo)member).PropertyType);
-						((PropertyInfo)member).SetValue(ctx.Container, value, null);
-						break;
-				}
-
-				ctx.Handled = true;
-			}
+				ctx.Value = ctx.GetMemberValue();
 		};
 
-		private static MemberInfo GetMember(Type type, string name, BindingFlags binding, bool ignoreCase)
+		private static MemberInfo GetMember(Type type, string name, BindingFlags? binding = null, bool ignoreCase = true)
 		{
 			if(type == null || string.IsNullOrWhiteSpace(name))
 				return null;
 
+			if(!binding.HasValue)
+				binding = (BindingFlags.Public | BindingFlags.Instance);
+
 			var members = type.FindMembers((MemberTypes.Field | MemberTypes.Property),
-								(BindingFlags.Public | BindingFlags.Instance | BindingFlags.GetField | BindingFlags.GetProperty),
+								binding.Value,
 								(member, criteria) =>
 								{
 									return string.Equals((string)criteria, member.Name,
@@ -589,42 +748,46 @@ namespace Zongsoft.Common
 			private ObjectResolvingDirection _direction;
 			private object _target;
 			private object _container;
-			private string _path;
+			private MemberInfo _member;
+			private string _text;
+			private string _memberName;
 			private object _value;
-			private string _name;
 			private bool _handled;
+			private bool _isTerminated;
 			#endregion
 
 			#region 构造函数
-			internal ObjectResolvingContext(object target, string path)
+			internal ObjectResolvingContext(object target, string text)
 			{
 				if(target == null)
 					throw new ArgumentNullException("target");
 
-				if(string.IsNullOrWhiteSpace(path))
-					throw new ArgumentNullException("path");
+				if(string.IsNullOrWhiteSpace(text))
+					throw new ArgumentNullException("text");
 
 				_direction = ObjectResolvingDirection.Get;
 				_target = target;
 				_container = target;
 				_value = target;
-				_path = path;
+				_text = text;
+				_handled = true;
 			}
 
-			internal ObjectResolvingContext(object target, object container, string name, object value, string path)
+			internal ObjectResolvingContext(object target, object container, string memberName, object value, string text)
 			{
 				if(target == null)
 					throw new ArgumentNullException("target");
 
-				if(string.IsNullOrWhiteSpace(path))
-					throw new ArgumentNullException("path");
+				if(string.IsNullOrWhiteSpace(text))
+					throw new ArgumentNullException("text");
 
 				_direction = ObjectResolvingDirection.Set;
 				_target = target;
 				_container = container;
-				_name = name;
+				_memberName = memberName;
 				_value = value;
-				_path = path;
+				_text = text;
+				_handled = true;
 			}
 			#endregion
 
@@ -663,17 +826,20 @@ namespace Zongsoft.Common
 				internal set
 				{
 					_container = value;
+
+					//必须重置当前的解析成员
+					_member = null;
 				}
 			}
 
 			/// <summary>
-			/// 获取解析的完整成员路径，返回一个以“.”分隔的字符串。
+			/// 获取解析的文本参数值。
 			/// </summary>
-			public string Path
+			public string Text
 			{
 				get
 				{
-					return _path;
+					return _text;
 				}
 			}
 
@@ -681,8 +847,8 @@ namespace Zongsoft.Common
 			/// 获取或设置一个操作的值，该属性在不同场景中所表示的含义和可设置性均不同。详情请参考备注。
 			/// </summary>
 			/// <remarks>
-			///		<para>当<see cref="Direction"/>属性值等于<seealso cref="ObjectResolvingDirection.Get"/>时，该属性可设置，表示处理程序所解析出来的成员值。</para>
-			///		<para>当<see cref="Direction"/>属性值等于<seealso cref="ObjectResolvingDirection.Set"/>时，该属性不可设置，表示是由用户指定要设置的目标值。</para>
+			///		<para>当<see cref="Direction"/>属性值等于<seealso cref="ObjectResolvingDirection.Get"/>时，表示处理程序所解析出来的成员值。</para>
+			///		<para>当<see cref="Direction"/>属性值等于<seealso cref="ObjectResolvingDirection.Set"/>时，表示是由用户指定要设置的目标值。</para>
 			/// </remarks>
 			/// <exception cref="System.InvalidOperationException">当<see cref="Direction"/>属性值不等于<seealso cref="ObjectResolvingDirection.Get"/>时激发。</exception>
 			public object Value
@@ -693,9 +859,6 @@ namespace Zongsoft.Common
 				}
 				set
 				{
-					if(_direction != ObjectResolvingDirection.Get)
-						throw new InvalidOperationException();
-
 					_value = value;
 				}
 			}
@@ -703,15 +866,63 @@ namespace Zongsoft.Common
 			/// <summary>
 			/// 获取当前解析的成员名称。
 			/// </summary>
-			public string Name
+			public string MemberName
 			{
 				get
 				{
-					return _name;
+					return _memberName;
 				}
 				internal set
 				{
-					_name = value;
+					_memberName = value;
+
+					//必须重置当前的解析成员
+					_member = null;
+				}
+			}
+
+			/// <summary>
+			/// 获取当前解析的成员信息。
+			/// </summary>
+			public MemberInfo Member
+			{
+				get
+				{
+					if(_member == null)
+					{
+						if(_container == null || string.IsNullOrWhiteSpace(_memberName))
+							return null;
+
+						_member = GetMember(_container.GetType(), _memberName);
+					}
+
+					return _member;
+				}
+			}
+
+			/// <summary>
+			/// 获取当前解析成员的类型。
+			/// </summary>
+			public Type MemberType
+			{
+				get
+				{
+					var member = this.Member;
+
+					if(member == null)
+						return null;
+
+					switch(member.MemberType)
+					{
+						case MemberTypes.Field:
+							return ((FieldInfo)member).FieldType;
+						case MemberTypes.Property:
+							return ((PropertyInfo)member).PropertyType;
+						case MemberTypes.Method:
+							return ((MethodInfo)member).ReturnType;
+					}
+
+					return null;
 				}
 			}
 
@@ -732,6 +943,53 @@ namespace Zongsoft.Common
 				{
 					_handled = value;
 				}
+			}
+
+			/// <summary>
+			/// 获取或设置是否终止标记。
+			/// </summary>
+			public bool IsTerminated
+			{
+				get
+				{
+					return _isTerminated;
+				}
+				set
+				{
+					_isTerminated = value;
+				}
+			}
+			#endregion
+
+			#region 公共方法
+			public object GetMemberValue()
+			{
+				return this.GetMemberValue(this.Container);
+			}
+
+			public object GetMemberValue(object container)
+			{
+				var member = this.Member;
+
+				if(member == null)
+				{
+					if(container == null)
+						throw new ArgumentException(string.Format("The '{0}' member is not exists for '{1}' text.", this.MemberName, this.Text));
+					else
+						throw new ArgumentException(string.Format("The '{0}' member is not exists in the '{1}' type.", this.MemberName, container.GetType().FullName));
+				}
+
+				switch(member.MemberType)
+				{
+					case MemberTypes.Field:
+						return ((FieldInfo)member).GetValue(container);
+					case MemberTypes.Property:
+						return ((PropertyInfo)member).GetValue(container, null);
+					case MemberTypes.Method:
+						return ((MethodInfo)member).Invoke(container, null);
+				}
+
+				throw new InvalidOperationException(string.Format("Invalid '{0}' member for '{1}' text.", this.MemberName, this.Text));
 			}
 			#endregion
 		}

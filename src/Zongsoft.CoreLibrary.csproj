@@ -50,6 +50,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -70,6 +71,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -77,17 +79,22 @@
     <Compile Include="Collections\Collection.cs" />
     <Compile Include="Collections\CollectionRemovedEventArgs.cs" />
     <Compile Include="Collections\CollectionRemovedReason.cs" />
+    <Compile Include="Collections\DictionaryExtension.cs" />
     <Compile Include="Collections\EnqueuedEventArgs.cs" />
     <Compile Include="Collections\HashSetExtension.cs" />
     <Compile Include="Collections\HierarchicalNode.cs" />
     <Compile Include="Collections\HierarchicalNodeCollection.cs" />
     <Compile Include="Collections\BinaryComparer.cs" />
     <Compile Include="Collections\IQueueProvider.cs" />
+    <Compile Include="Collections\IQueue`1.cs" />
     <Compile Include="Collections\NamedCollectionBase.cs" />
     <Compile Include="Collections\NamedCollection.cs" />
     <Compile Include="Collections\ObjectCache.cs" />
     <Compile Include="Common\BitVector32.cs" />
     <Compile Include="Common\IDisposableObject.cs" />
+    <Compile Include="Common\IAccumulator.cs" />
+    <Compile Include="Common\IEventHandler.cs" />
+    <Compile Include="Common\IEventHandler`1.cs" />
     <Compile Include="Common\IObjectReference.cs" />
     <Compile Include="Common\ISequence.cs" />
     <Compile Include="Common\ObjectReference.cs" />
@@ -173,22 +180,34 @@
     <Compile Include="Data\ConditionCollection.cs" />
     <Compile Include="Data\ConditionCombine.cs" />
     <Compile Include="Data\ConditionOperator.cs" />
+    <Compile Include="Data\DataAccessAttribute.cs" />
     <Compile Include="Data\DataAccessBase.cs" />
+    <Compile Include="Data\Grouping.cs" />
     <Compile Include="Data\ICondition.cs" />
     <Compile Include="Data\Paging.cs" />
     <Compile Include="Data\Sorting.cs" />
     <Compile Include="Diagnostics\Configuration\TracerElement.cs" />
     <Compile Include="IO\DirectoryInfo.cs" />
-    <Compile Include="IO\DirectoryProvider.cs" />
     <Compile Include="IO\FileInfo.cs" />
-    <Compile Include="IO\FileProvider.cs" />
-    <Compile Include="IO\IDirectoryService.cs" />
-    <Compile Include="IO\IFileService.cs" />
-    <Compile Include="IO\LocalDirectoryService.cs" />
-    <Compile Include="IO\LocalFileService.cs" />
+    <Compile Include="IO\FileSystem.cs" />
+    <Compile Include="IO\PathInfo.cs" />
+    <Compile Include="IO\IDirectory.cs" />
+    <Compile Include="IO\IFile.cs" />
+    <Compile Include="IO\IFileSystem.cs" />
+    <Compile Include="IO\IStorageBucket.cs" />
+    <Compile Include="IO\IStorageFile.cs" />
+    <Compile Include="IO\LocalFileSystem.cs" />
     <Compile Include="IO\Path.cs" />
     <Compile Include="IO\PathException.cs" />
-    <Compile Include="IO\LocalPath.cs" />
+    <Compile Include="IO\StorageBucketInfo.cs" />
+    <Compile Include="IO\StorageBucket.cs" />
+    <Compile Include="IO\StorageFileInfo.cs" />
+    <Compile Include="IO\StorageFile.cs" />
+    <Compile Include="Messaging\IMessageQueue.cs" />
+    <Compile Include="Messaging\MessageBase.cs" />
+    <Compile Include="Messaging\MessageDequeueSettings.cs" />
+    <Compile Include="Messaging\MessageEnqueueSettings.cs" />
+    <Compile Include="Messaging\MessageQueueBase.cs" />
     <Compile Include="Options\Configuration\OptionConfigurationLoader.cs" />
     <Compile Include="Options\Configuration\OptionConfigurationManager.cs" />
     <Compile Include="Options\IOptionLoader.cs" />
@@ -210,6 +229,8 @@
     <Compile Include="Runtime\Caching\BufferManagerBase.cs" />
     <Compile Include="Runtime\Caching\BufferManagerSelector.cs" />
     <Compile Include="Runtime\Caching\BufferUtility.cs" />
+    <Compile Include="Runtime\Caching\CacheChangedEventArgs.cs" />
+    <Compile Include="Runtime\Caching\CacheChangedReason.cs" />
     <Compile Include="Runtime\Caching\FileBufferManager.cs" />
     <Compile Include="Runtime\Caching\IBufferManager.cs" />
     <Compile Include="Runtime\Caching\IBufferManagerSelector.cs" />
@@ -235,6 +256,9 @@
     <Compile Include="Runtime\Caching\ICache.cs" />
     <Compile Include="Runtime\Caching\ICacheCreator.cs" />
     <Compile Include="Runtime\Caching\ICacheProvider.cs" />
+    <Compile Include="Runtime\Caching\MemoryCache.cs" />
+    <Compile Include="Runtime\Serialization\DictionarySerializer.cs" />
+    <Compile Include="Runtime\Serialization\IDictionarySerializer.cs" />
     <Compile Include="Runtime\Serialization\ISerializable.cs" />
     <Compile Include="Runtime\Serialization\ISerializationWriter.cs" />
     <Compile Include="Runtime\Serialization\ISerializer.cs" />
@@ -242,6 +266,8 @@
     <Compile Include="Runtime\Serialization\JsonSerializationWriter.cs" />
     <Compile Include="Runtime\Serialization\SerializationDirection.cs" />
     <Compile Include="Runtime\Serialization\SerializationMembers.cs" />
+    <Compile Include="Runtime\Serialization\SerializationNamingConvention.cs" />
+    <Compile Include="Runtime\Serialization\SerializerAttribute.cs" />
     <Compile Include="Runtime\Serialization\TextSerializationWriter.cs" />
     <Compile Include="Runtime\Serialization\SerializationWriterContext.cs" />
     <Compile Include="Runtime\Serialization\SerializationWroteEventArgs.cs" />
@@ -250,20 +276,21 @@
     <Compile Include="Runtime\Serialization\Serializer.cs" />
     <Compile Include="Runtime\Serialization\SerializationContext.cs" />
     <Compile Include="Runtime\Serialization\SerializationEventArgs.cs" />
-    <Compile Include="Runtime\Serialization\SerializerSettings.cs" />
+    <Compile Include="Runtime\Serialization\SerializationSettings.cs" />
+    <Compile Include="Runtime\Serialization\TextSerializationSettings.cs" />
     <Compile Include="Security\CertificationIdentity.cs" />
     <Compile Include="Security\CertificationPrincipal.cs" />
+    <Compile Include="Security\ICensorship.cs" />
+    <Compile Include="Security\Membership\AuthenticatedEventArgs.cs" />
     <Compile Include="Security\Membership\AuthenticationAttribute.cs" />
-    <Compile Include="Security\Membership\Authentication.cs" />
     <Compile Include="Security\Membership\AuthenticationException.cs" />
+    <Compile Include="Security\Membership\IMemberProvider.cs" />
     <Compile Include="Security\Membership\UserIdentityType.cs" />
     <Compile Include="Security\Membership\AuthenticationResult.cs" />
-    <Compile Include="Security\Membership\Authorization.cs" />
     <Compile Include="Security\Membership\AuthorizationAttribute.cs" />
     <Compile Include="Security\Membership\AuthorizedState.cs" />
     <Compile Include="Security\Certification.cs" />
     <Compile Include="Security\CertificationException.cs" />
-    <Compile Include="Security\CertificationProvider.cs" />
     <Compile Include="Security\Membership\IAuthentication.cs" />
     <Compile Include="Security\Membership\IAuthorization.cs" />
     <Compile Include="Security\ICertificationProvider.cs" />
@@ -271,15 +298,11 @@
     <Compile Include="Security\Membership\IRoleProvider.cs" />
     <Compile Include="Security\Membership\IUserProvider.cs" />
     <Compile Include="Security\Membership\Member.cs" />
-    <Compile Include="Security\Membership\MembershipHelper.cs" />
     <Compile Include="Security\Membership\MemberType.cs" />
     <Compile Include="Security\Membership\Permission.cs" />
     <Compile Include="Security\Membership\PermissionFilter.cs" />
-    <Compile Include="Security\Membership\PermissionProvider.cs" />
     <Compile Include="Security\Membership\Role.cs" />
-    <Compile Include="Security\Membership\RoleProvider.cs" />
     <Compile Include="Security\Membership\User.cs" />
-    <Compile Include="Security\Membership\UserProvider.cs" />
     <Compile Include="Security\PasswordUtility.cs" />
     <Compile Include="Services\CommandBase.cs" />
     <Compile Include="Services\CommandContextBase.cs" />
@@ -306,6 +329,7 @@
     <Compile Include="Services\Composition\ExecutionPipelineContext.cs" />
     <Compile Include="Services\Composition\ExecutionPipelineExecutedEventArgs.cs" />
     <Compile Include="Services\Composition\ExecutionPipelineExecutingEventArgs.cs" />
+    <Compile Include="Services\Composition\ExecutionResult.cs" />
     <Compile Include="Services\Composition\IExecutionCombiner.cs" />
     <Compile Include="Services\Composition\IExecutionContext.cs" />
     <Compile Include="Services\Composition\IExecutionPipelineContext.cs" />
@@ -317,13 +341,13 @@
     <Compile Include="Services\IMatchable`1.cs" />
     <Compile Include="Services\IMatcher.cs" />
     <Compile Include="Services\IMatcher`1.cs" />
-    <Compile Include="Services\IPredicationProvider.cs" />
     <Compile Include="Services\IPredication`1.cs" />
     <Compile Include="Services\IServiceBuilder.cs" />
     <Compile Include="Services\IServiceLifetime.cs" />
     <Compile Include="Services\IServiceStorage.cs" />
-    <Compile Include="Services\MatchableAttribute.cs" />
+    <Compile Include="Services\MatcherAttribute.cs" />
     <Compile Include="Services\Matcher.cs" />
+    <Compile Include="Services\PredicationBase.cs" />
     <Compile Include="Services\PredicationCollection`1.cs" />
     <Compile Include="Services\ServiceProviderBase.cs" />
     <Compile Include="Services\ServiceEntry.cs" />
@@ -331,6 +355,7 @@
     <Compile Include="Services\ServiceStorage.cs" />
     <Compile Include="Services\ServiceUnregisteredEventArgs.cs" />
     <Compile Include="Services\WorkerStateChangedEventArgs.cs" />
+    <Compile Include="TaskUtility.cs" />
     <Compile Include="Terminals\CommandHelper.cs" />
     <Compile Include="Services\CommandNotFoundException.cs" />
     <Compile Include="Services\CommandTreeNodeCollection.cs" />
@@ -341,7 +366,7 @@
     <Compile Include="Services\PredicationCollection.cs" />
     <Compile Include="Services\PredicationCombine.cs" />
     <Compile Include="Services\Predicator.cs" />
-    <Compile Include="Options\ISettingProvider.cs" />
+    <Compile Include="Options\ISettingsProvider.cs" />
     <Compile Include="Services\Composition\ExecutionFilterCompositeCollection.cs" />
     <Compile Include="Services\Composition\ExecutionPipeline.cs" />
     <Compile Include="Services\Composition\ExecutionHandler.cs" />
@@ -477,6 +502,8 @@
     <Compile Include="Terminals\TerminalCommandContext.cs" />
     <Compile Include="Terminals\TerminalCommandExecutor.cs" />
     <Compile Include="Terminals\TerminalStyles.cs" />
+    <Compile Include="Text\ITextRegular.cs" />
+    <Compile Include="Text\TextRegular.cs" />
     <Compile Include="Text\TextExpression.cs" />
     <Compile Include="Text\TextExpressionArgument.cs" />
     <Compile Include="Text\TextExpressionNode.cs" />
@@ -484,6 +511,7 @@
     <Compile Include="Text\TextExpressionParser.cs" />
     <Compile Include="Transactions\EnlistmentContext.cs" />
     <Compile Include="Transactions\IEnlistment.cs" />
+    <Compile Include="Transactions\IsolationLevel.cs" />
     <Compile Include="Transactions\Transaction.cs" />
     <Compile Include="Transactions\EnlistmentPhase.cs" />
     <Compile Include="Transactions\TransactionInformation.cs" />

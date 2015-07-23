@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2013 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.CoreLibrary.
  *
@@ -33,7 +33,7 @@ namespace Zongsoft.Data
 	{
 		#region 成员字段
 		private SortingMode _mode;
-		private string[] _fields;
+		private string[] _members;
 		#endregion
 
 		#region 构造函数
@@ -41,17 +41,17 @@ namespace Zongsoft.Data
 		{
 		}
 
-		public Sorting(params string[] fields) : this(SortingMode.Ascending, fields)
+		public Sorting(params string[] members) : this(SortingMode.Ascending, members)
 		{
 		}
 
-		public Sorting(SortingMode mode, params string[] fields)
+		public Sorting(SortingMode mode, params string[] members)
 		{
-			if(fields == null || fields.Length == 0)
-				throw new ArgumentNullException("fields");
+			if(members == null || members.Length == 0)
+				throw new ArgumentNullException("members");
 
 			this.Mode = mode;
-			this.Fields = fields;
+			this.Members = members;
 		}
 		#endregion
 
@@ -68,29 +68,29 @@ namespace Zongsoft.Data
 			}
 		}
 
-		public string FieldsText
+		public string MembersText
 		{
 			get
 			{
-				if(_fields == null || _fields.Length < 1)
+				if(_members == null || _members.Length < 1)
 					return string.Empty;
 
-				return string.Join(", ", _fields);
+				return string.Join(", ", _members);
 			}
 			set
 			{
 				if(string.IsNullOrWhiteSpace(value))
 					throw new ArgumentNullException();
 
-				this.Fields = value.Split(',');
+				this.Members = value.Split(',');
 			}
 		}
 
-		public string[] Fields
+		public string[] Members
 		{
 			get
 			{
-				return _fields;
+				return _members;
 			}
 			set
 			{
@@ -99,45 +99,45 @@ namespace Zongsoft.Data
 
 				var hashset = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-				foreach(var field in value)
+				foreach(var member in value)
 				{
-					if(!string.IsNullOrWhiteSpace(field))
-						hashset.Add(field.Trim());
+					if(!string.IsNullOrWhiteSpace(member))
+						hashset.Add(member.Trim());
 				}
 
 				if(hashset == null)
 					throw new ArgumentException();
 
-				string[] fields = new string[hashset.Count];
-				hashset.CopyTo(fields);
+				string[] members = new string[hashset.Count];
+				hashset.CopyTo(members);
 
-				_fields = fields;
+				_members = members;
 			}
 		}
 		#endregion
 
 		#region 静态方法
-		public static Sorting Ascending(params string[] fields)
+		public static Sorting Ascending(params string[] members)
 		{
-			if(fields == null || fields.Length < 1)
-				throw new ArgumentNullException("fields");
+			if(members == null || members.Length < 1)
+				throw new ArgumentNullException("members");
 
-			return new Sorting(SortingMode.Ascending, fields);
+			return new Sorting(SortingMode.Ascending, members);
 		}
 
-		public static Sorting Descending(params string[] fields)
+		public static Sorting Descending(params string[] members)
 		{
-			if(fields == null || fields.Length < 1)
-				throw new ArgumentNullException("fields");
+			if(members == null || members.Length < 1)
+				throw new ArgumentNullException("members");
 
-			return new Sorting(SortingMode.Descending, fields);
+			return new Sorting(SortingMode.Descending, members);
 		}
 		#endregion
 
 		#region 重写方法
 		public override string ToString()
 		{
-			return string.Format("{0} ({1})", _mode, this.FieldsText);
+			return string.Format("{0} ({1})", _mode, this.MembersText);
 		}
 		#endregion
 
@@ -173,9 +173,9 @@ namespace Zongsoft.Data
 
 			if(a.Mode == b.Mode)
 			{
-				var hashset = new HashSet<string>(a.Fields, StringComparer.OrdinalIgnoreCase);
+				var hashset = new HashSet<string>(a.Members, StringComparer.OrdinalIgnoreCase);
 
-				foreach(var field in b.Fields)
+				foreach(var field in b.Members)
 				{
 					hashset.Add(field);
 				}

@@ -13,21 +13,22 @@ namespace Zongsoft.Security
 
 		public CertificationTest()
 		{
-			_certification = new Certification("10012001", "Namespace", "Web", 101, TimeSpan.FromHours(4), new DateTime(2015, 5, 15));
+			_certification = new Certification("10012001", new Membership.User(101, "Popeye"), "Namespace", "Web", TimeSpan.FromHours(4), new DateTime(2015, 5, 15));
 			_certification.ExtendedProperties.Add("User.Avatar", ":001:");
 			_certification.ExtendedProperties.Add("User.Nickname", "钟少");
 			_certification.ExtendedProperties.Add("User.Gender", Zongsoft.Tests.Gender.Male);
 		}
 
 		[TestMethod]
-		public void TestToDictionary()
+		public void ToDictionaryTest()
 		{
 			var dictionary = _certification.ToDictionary();
 
 			Assert.AreEqual("10012001", dictionary["CertificationId"]);
 			Assert.AreEqual("Namespace", dictionary["Namespace"]);
 			Assert.AreEqual("Web", dictionary["Scene"]);
-			Assert.AreEqual(101, dictionary["UserId"]);
+			Assert.AreEqual(101, dictionary["User.UserId"]);
+			Assert.AreEqual("Popeye", dictionary["User.Name"]);
 			Assert.AreEqual(new DateTime(2015, 5, 15), dictionary["IssuedTime"]);
 			Assert.AreEqual(TimeSpan.FromHours(4), dictionary["Duration"]);
 
@@ -37,7 +38,7 @@ namespace Zongsoft.Security
 		}
 
 		[TestMethod]
-		public void TestFromDictionary()
+		public void FromDictionaryTest()
 		{
 			var dictionary = _certification.ToDictionary();
 			var certification = Certification.FromDictionary(dictionary);
@@ -45,7 +46,7 @@ namespace Zongsoft.Security
 			Assert.AreEqual("10012001", certification.CertificationId);
 			Assert.AreEqual("Namespace", certification.Namespace);
 			Assert.AreEqual("Web", certification.Scene);
-			Assert.AreEqual(101, certification.UserId);
+			Assert.AreEqual(101, certification.User.UserId);
 			Assert.AreEqual(new DateTime(2015, 5, 15), certification.IssuedTime);
 			Assert.AreEqual(TimeSpan.FromHours(4), certification.Duration);
 

@@ -15,6 +15,18 @@ namespace Zongsoft.Common.Tests
 		[TestMethod]
 		public void ConvertValueTest()
 		{
+			Assert.IsNull(Zongsoft.Common.Convert.ConvertValue<int?>("", () => null));
+			Assert.IsNull(Zongsoft.Common.Convert.ConvertValue<int?>("x", () => null));
+			Assert.IsNotNull(Zongsoft.Common.Convert.ConvertValue<int?>("123", () => null));
+			Assert.AreEqual(123, Zongsoft.Common.Convert.ConvertValue<int?>("123", () => null));
+
+			Assert.AreEqual(123, Zongsoft.Common.Convert.ConvertValue<int>("123"));
+
+			Assert.AreEqual("100", Zongsoft.Common.Convert.ConvertValue<string>(100));
+			Assert.AreEqual("100", Zongsoft.Common.Convert.ConvertValue<string>(100L));
+			Assert.AreEqual("100.5", Zongsoft.Common.Convert.ConvertValue<string>(100.50));
+			Assert.AreEqual("100.50", Zongsoft.Common.Convert.ConvertValue<string>(100.50m));
+
 			Assert.AreEqual(Gender.Male, Zongsoft.Common.Convert.ConvertValue("male", typeof(Gender)));
 			Assert.AreEqual(Gender.Male, Zongsoft.Common.Convert.ConvertValue("Male", typeof(Gender)));
 			Assert.AreEqual(Gender.Female, Zongsoft.Common.Convert.ConvertValue("female", typeof(Gender)));
@@ -57,6 +69,28 @@ namespace Zongsoft.Common.Tests
 
 			Zongsoft.Common.Convert.SetValue(person, "HomeAddress.City", "Shenzhen");
 			Assert.AreEqual("Shenzhen", Zongsoft.Common.Convert.GetValue(person, "HomeAddress.City"));
+		}
+
+		[TestMethod]
+		public void PopulateTest()
+		{
+			var dictionary = new Dictionary<string, object>()
+			{
+				{ "Name", "Popeye Zhong" },
+				{ "Gender", Gender.Male },
+				{ "HomeAddress", new Address(){ City = "Wuhan", CountryId = 123 } },
+				{ "OfficeAddress.City", "Shenzhen" },
+				{ "OfficeAddress.CountryId", 69 },
+			};
+
+			var person = Zongsoft.Common.Convert.Populate<Person>((IDictionary<string, object>)dictionary);
+
+			Assert.AreEqual("Popeye Zhong", person.Name);
+			Assert.AreEqual(Gender.Male, person.Gender);
+			Assert.AreEqual(123, person.HomeAddress.CountryId);
+			Assert.AreEqual("Wuhan", person.HomeAddress.City);
+			Assert.AreEqual(69, person.OfficeAddress.CountryId);
+			Assert.AreEqual("Shenzhen", person.OfficeAddress.City);
 		}
 
 		[TestMethod]

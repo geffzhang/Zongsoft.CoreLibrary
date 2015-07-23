@@ -37,7 +37,7 @@ namespace Zongsoft.Collections
 	/// <remarks>
 	///		<para>本队列的默认实现不同步。</para>
 	///		<para>本队列中的各种方法本质上不是一个线程安全的过程。若要确保各种操作过程中的线程安全性，可以在操作过程中锁定队列。若要允许多个线程访问集合以进行读写操作，则必须实现自己的同步。</para>
-	///		<para>通过锁定实现于<seealso cref="System.Collections.ICollection"/>接口中的<seealso cref="SyncRoot"/>属性值，达成同步访问的效果。</para>
+	///		<para>通过锁定实现于<seealso cref="System.Collections.ICollection"/>接口中的<seealso cref="System.Collections.ICollection.SyncRoot"/>属性值，达成同步访问的效果。</para>
 	/// </remarks>
 	public class Queue : Zongsoft.Collections.IQueue
 	{
@@ -301,22 +301,22 @@ namespace Zongsoft.Collections
 		}
 
 		/// <summary>
-		/// 移除并返回从开始处的由<paramref name="length"/>参数指定的连续多个对象。
+		/// 移除并返回从开始处的由<paramref name="count"/>参数指定的连续多个对象。
 		/// </summary>
-		/// <param name="length">指定要连续移除的元素数。</param>
+		/// <param name="count">指定要连续移除的元素数。</param>
 		/// <returns>从队列的开头处指定的连续对象集。</returns>
 		/// <exception cref="System.InvalidOperationException">当队列为空，即<see cref="Count"/>属性等于零。</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="length"/>参数小于壹(1)。</exception>
-		/// <remarks>如果<paramref name="length"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</remarks>
-		public IEnumerable Dequeue(int length)
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="count"/>参数小于壹(1)。</exception>
+		/// <remarks>如果<paramref name="count"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</remarks>
+		public IEnumerable Dequeue(int count)
 		{
-			return this.Dequeue(length, CollectionRemovedReason.Remove);
+			return this.Dequeue(count, CollectionRemovedReason.Remove);
 		}
 
-		private IEnumerable Dequeue(int length, CollectionRemovedReason reason)
+		private IEnumerable Dequeue(int count, CollectionRemovedReason reason)
 		{
 			int actualLength;
-			var result = this.GetElements(0, length, true, out actualLength);
+			var result = this.GetElements(0, count, true, out actualLength);
 
 			_head = (_head + actualLength) % _buffer.Length;
 			_size -= actualLength;
@@ -333,36 +333,43 @@ namespace Zongsoft.Collections
 		/// 将指定集合中的所有元素依次添加到<seealso cref="Zongsoft.Collections.Queue"/>的结尾处。
 		/// </summary>
 		/// <param name="items">要入队的集合。</param>
-		public void EnqueueMany<T>(IEnumerable<T> items)
+		/// <param name="settings">不支持入队的选项参数设置，始终忽略该参数。</param>
+		public int EnqueueMany<T>(IEnumerable<T> items, object settings = null)
 		{
 			if(items == null)
 				throw new ArgumentNullException("items");
 
+			int count = 0;
+
 			foreach(var item in items)
-				this.Enqueue(item);
+			{
+				this.Enqueue(item, settings);
+				count++;
+			}
+
+			return count;
 		}
 
 		/// <summary>
 		/// 将字符串文本添加到<seealso cref="Zongsoft.Collections.Queue"/>的结尾处。
 		/// </summary>
 		/// <param name="text">要入队的字符串文本，该值可以为空(null)。</param>
-		/// <remarks>
-		///		<para>该重载可以优先<see cref="Enqueue"/>重载的匹配。</para>
-		/// </remarks>
-		public void Enqueue(string text)
+		/// <param name="settings">不支持入队的选项参数设置，始终忽略该参数。</param>
+		public void Enqueue(string text, object settings = null)
 		{
-			this.Enqueue((object)text);
+			this.Enqueue((object)text, settings);
 		}
 
 		/// <summary>
 		/// 将对象添加到<seealso cref="Zongsoft.Collections.Queue"/>的结尾处。
 		/// </summary>
 		/// <param name="item">要入队的对象，该值可以为空(null)。</param>
+		/// <param name="settings">不支持入队的选项参数设置，始终忽略该参数。</param>
 		/// <remarks>
 		///		<para>容量<seealso cref="Capacity"/>是指队列可以保存的元素数。随着入队操作（即向队列中添加元素），容量通过重新分配按需自动增加。但是增加到最大限制值(<seealso cref="MaximumLimit"/>)就不再扩容，而是首先导致出队以腾出空间再入队。</para>
 		///		<para>成长因子是当需要更大容量时当前容量要乘以的数字。在构造<seealso cref="Zongsoft.Collections.Queue"/>时确定增长因子。无论增长因子是多少，队列的容量将始终增加一个最小值（即<see cref="MinimumGrow"/>属性值），即使1.0f的增长因子也不会阻止队列的扩容。</para>
 		/// </remarks>
-		public void Enqueue(object item)
+		public void Enqueue(object item, object settings = null)
 		{
 			if(_size == _buffer.Length)
 			{
@@ -395,16 +402,16 @@ namespace Zongsoft.Collections
 
 		#region 获取操作
 		/// <summary>
-		/// 返回从开始处的由<paramref name="length"/>参数指定的连续多个对象。
+		/// 返回从开始处的由<paramref name="count"/>参数指定的连续多个对象。
 		/// </summary>
-		/// <param name="length">指定要连续查看的元素数。</param>
+		/// <param name="count">指定要连续查看的元素数。</param>
 		/// <returns>从队列的开头处指定的连续对象集。</returns>
 		/// <exception cref="System.InvalidOperationException">当队列为空，即<see cref="Count"/>属性等于零。</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="length"/>参数小于壹(1)。</exception>
-		/// <remarks>如果<paramref name="length"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</remarks>
-		public IEnumerable Peek(int length)
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="count"/>参数小于壹(1)。</exception>
+		/// <remarks>如果<paramref name="count"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</remarks>
+		public IEnumerable Peek(int count)
 		{
-			return this.GetElements(0, length, false);
+			return this.GetElements(0, count, false);
 		}
 
 		/// <summary>
@@ -413,7 +420,7 @@ namespace Zongsoft.Collections
 		/// <returns>位于队列开头处的对象。</returns>
 		/// <exception cref="System.InvalidOperationException">当队列为空，即<see cref="Count"/>属性等于零。</exception>
 		/// <remarks>
-		///		<para>此方法类似于<seealso cref="Dequeue"/>出队方法，但本方法不修改<seealso cref="Zongsoft.Collections.Queue"/>队列。</para>
+		///		<para>此方法类似于<seealso cref="Dequeue()"/>出队方法，但本方法不修改<seealso cref="Zongsoft.Collections.Queue"/>队列。</para>
 		/// </remarks>
 		public object Peek()
 		{
@@ -424,19 +431,19 @@ namespace Zongsoft.Collections
 		}
 
 		/// <summary>
-		/// 返回从队列开头处往后偏移由<paramref name="startOffset"/>参数指定长度后开始的由<paramref name="length"/>参数指定的连续多个对象。
+		/// 返回从队列开头处往后偏移由<paramref name="startOffset"/>参数指定长度后开始的由<paramref name="count"/>参数指定的连续多个对象。
 		/// </summary>
 		/// <param name="startOffset">从队列开头处往后偏移的长度。</param>
-		/// <param name="length">要连续获取的元素数。</param>
+		/// <param name="count">要连续获取的元素数。</param>
 		/// <returns>从队列的开头处指定偏移后的连续特定长度的对象集。</returns>
 		/// <exception cref="System.InvalidOperationException">当队列为空，即<see cref="Count"/>属性等于零。</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="length"/>参数小于壹(1)。</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="count"/>参数小于壹(1)。</exception>
 		/// <remarks>
-		///		<para>如果<paramref name="length"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</para>
+		///		<para>如果<paramref name="count"/>参数指定的数值超出队列中可用的元素数，则忽略该参数值，而应用可用的元素数。</para>
 		/// </remarks>
-		public IEnumerable Take(int startOffset, int length)
+		public IEnumerable Take(int startOffset, int count)
 		{
-			return this.GetElements(startOffset, length, false);
+			return this.GetElements(startOffset, count, false);
 		}
 
 		/// <summary>
@@ -491,26 +498,26 @@ namespace Zongsoft.Collections
 		#endregion
 
 		#region 私有方法
-		private ICollection GetElements(long startOffset, int length, bool cleanup)
+		private ICollection GetElements(long startOffset, int count, bool cleanup)
 		{
 			int actualLength;
-			return this.GetElements(startOffset, length, cleanup, out actualLength);
+			return this.GetElements(startOffset, count, cleanup, out actualLength);
 		}
 
-		private ICollection GetElements(long startOffset, int length, bool cleanup, out int actualLength)
+		private ICollection GetElements(long startOffset, int count, bool cleanup, out int actualLength)
 		{
 			if(startOffset < 0)
 				throw new ArgumentOutOfRangeException("startOffset");
 
-			if(length < 1)
-				throw new ArgumentOutOfRangeException("length");
+			if(count < 1)
+				throw new ArgumentOutOfRangeException("count");
 
 			if(_size == 0)
 				throw new InvalidOperationException();
 
 			long startIndex = (_head + startOffset) % _buffer.Length;
 			long finishIndex = _head < _tail ? _tail : _tail + _buffer.Length;
-			actualLength = (int)Math.Min(finishIndex - startIndex + 1, length);
+			actualLength = (int)Math.Min(finishIndex - startIndex + 1, count);
 
 			object[] result = new object[actualLength];
 

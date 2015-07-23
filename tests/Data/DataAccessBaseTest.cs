@@ -45,7 +45,6 @@ namespace Zongsoft.Data
 			Assert.IsTrue(_dataAccess.IsScalarType(typeof(TimeSpan[])));
 
 			Assert.IsFalse(_dataAccess.IsScalarType(typeof(Zongsoft.Tests.Address)));
-			Assert.IsFalse(_dataAccess.IsScalarType(typeof(Zongsoft.Tests.Address?)));
 			Assert.IsFalse(_dataAccess.IsScalarType(typeof(Zongsoft.Tests.Address[])));
 
 			Assert.IsTrue(_dataAccess.IsScalarType(typeof(Zongsoft.Tests.Gender)));
@@ -68,7 +67,7 @@ namespace Zongsoft.Data
 				throw new NotImplementedException();
 			}
 
-			protected override IEnumerable<T> Select<T>(string name, ICondition condition, string[] members, Paging paging, params Sorting[] sorting)
+			protected override IEnumerable<T> Select<T>(string name, ICondition condition, string[] members, Paging paging, Grouping grouping, params Sorting[] sorting)
 			{
 				throw new NotImplementedException();
 			}
@@ -78,7 +77,7 @@ namespace Zongsoft.Data
 				throw new NotImplementedException();
 			}
 
-			protected override int Insert<T>(string name, T entity, string[] members)
+			protected override int Insert(string name, object entity, string[] members)
 			{
 				throw new NotImplementedException();
 			}
@@ -88,7 +87,7 @@ namespace Zongsoft.Data
 				throw new NotImplementedException();
 			}
 
-			protected override int Update<T>(string name, T entity, ICondition condition, string[] members)
+			protected override int Update(string name, object entity, ICondition condition, string[] members)
 			{
 				throw new NotImplementedException();
 			}

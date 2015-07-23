@@ -40,7 +40,6 @@ namespace Zongsoft.Security
 		#endregion
 
 		#region 成员字段
-		private string _name;
 		private string _certificationId;
 		private Certification _certification;
 		private ICertificationProvider _provider;
@@ -50,30 +49,37 @@ namespace Zongsoft.Security
 		private CertificationIdentity()
 		{
 			_certificationId = string.Empty;
-			_name = string.Empty;
 		}
 
-		public CertificationIdentity(string certificationId, string name)
+		public CertificationIdentity(string certificationId, ICertificationProvider provider = null)
 		{
+			if(string.IsNullOrWhiteSpace(certificationId))
+				throw new ArgumentNullException("certificationId");
+
 			_certificationId = certificationId;
-			_name = name;
+			_provider = provider;
 		}
 		#endregion
 
 		#region 公共属性
+		public string Name
+		{
+			get
+			{
+				var certification = this.Certification;
+
+				if(certification == null || certification.User == null)
+					return string.Empty;
+
+				return certification.User.Name;
+			}
+		}
+
 		public bool IsAuthenticated
 		{
 			get
 			{
 				return !string.IsNullOrWhiteSpace(_certificationId);
-			}
-		}
-
-		public string Name
-		{
-			get
-			{
-				return _name;
 			}
 		}
 

@@ -57,6 +57,7 @@ namespace Zongsoft.Data
 		/// <param name="condition">指定的查询条件。</param>
 		/// <param name="scope">指定的要获取的和排除获取的属性名列表，如果指定的是多个属性则属性名之间使用逗号(,)分隔；要排除的属性以减号(-)打头，星号(*)表示所有属性，感叹号(!)表示排除所有属性；如果未指定该参数则默认只会获取所有单值属性而不会获取导航属性。</param>
 		/// <param name="paging">指定的分页设置。</param>
+		/// <param name="grouping">指定的分组设置。</param>
 		/// <param name="sorting">指定的排序设置(包括排序的方式和字段)。</param>
 		/// <returns>返回的结果集。</returns>
 		/// <remarks>
@@ -75,6 +76,7 @@ namespace Zongsoft.Data
 		///		       },
 		///		       "Creator.HomeAddress, Corssing, -Owner.PhoneNumber",
 		///		       new Paging(1, 20),
+		///		       null,
 		///		       Sorting.Ascending("Timestamp"));
 		///		</code>
 		///		</example>
@@ -83,20 +85,23 @@ namespace Zongsoft.Data
 		                   ICondition condition,
 		                   string scope = null,
 		                   Paging paging = null,
+		                   Grouping grouping = null,
 		                   params Sorting[] sorting);
 
 		IEnumerable<T> Select<T>(string name,
 		                         ICondition condition,
 		                         string scope = null,
 		                         Paging paging = null,
+		                         Grouping grouping = null,
 		                         params Sorting[] sorting);
 
 		IEnumerable<T> Select<T>(string name,
-								 ICondition condition,
-								 Expression<Func<T, object>> includes = null,
-								 Expression<Func<T, object>> excludes = null,
-								 Paging paging = null,
-								 params Sorting[] sorting);
+		                         ICondition condition,
+		                         Expression<Func<T, object>> includes = null,
+		                         Expression<Func<T, object>> excludes = null,
+		                         Paging paging = null,
+		                         Grouping grouping = null,
+		                         params Sorting[] sorting);
 		#endregion
 
 		#region 删除方法
@@ -106,7 +111,7 @@ namespace Zongsoft.Data
 		#endregion
 
 		#region 插入方法
-		int Insert<T>(string name, T entity, string scope = null);
+		int Insert(string name, object entity, string scope = null);
 		int Insert<T>(string name, T entity, Expression<Func<T, object>> includes, Expression<Func<T, object>> excludes);
 
 		int Insert<T>(string name, IEnumerable<T> entities, string scope = null);
@@ -114,7 +119,7 @@ namespace Zongsoft.Data
 		#endregion
 
 		#region 更新方法
-		int Update<T>(string name, T entity, ICondition condition = null);
+		int Update(string name, object entity, ICondition condition = null);
 
 		/// <summary>
 		/// 根据指定的条件将指定的实体更新到数据源。
@@ -124,7 +129,7 @@ namespace Zongsoft.Data
 		/// <param name="condition">要更新的条件子句，如果为空(null)则根据实体的主键进行更新。</param>
 		/// <param name="scope">指定的要更新的和排除更新的属性名列表，如果指定的是多个属性则属性名之间使用逗号(,)分隔；要排除的属性以减号(-)打头，星号(*)表示所有属性，感叹号(!)表示排除所有属性；如果未指定该参数则默认只会更新所有单值属性而不会更新导航属性。</param>
 		/// <returns>返回受影响的记录行数，执行成功返回大于零的整数，失败则返回负数。</returns>
-		int Update<T>(string name, T entity, ICondition condition, string scope = null);
+		int Update(string name, object entity, ICondition condition, string scope = null);
 
 		int Update<T>(string name, T entity, ICondition condition, Expression<Func<T, object>> includes = null, Expression<Func<T, object>> excludes = null);
 

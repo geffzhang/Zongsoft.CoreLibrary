@@ -48,6 +48,14 @@ namespace Zongsoft.Services.Composition
 		}
 
 		/// <summary>
+		/// 获取本次执行中发生的异常。
+		/// </summary>
+		Exception Exception
+		{
+			get;
+		}
+
+		/// <summary>
 		/// 获取扩展属性集是否有内容。
 		/// </summary>
 		/// <remarks>

@@ -1,8 +1,8 @@
-/*
+ï»¿/*
  * Authors:
- *   ÖÓ·å(Popeye Zhong) <zongsoft@gmail.com>
+ *   é’Ÿå³°(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2003-2014 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2003-2015 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.CoreLibrary.
  *
@@ -31,16 +31,17 @@ using System.Collections.Generic;
 namespace Zongsoft.Security.Membership
 {
 	/// <summary>
-	/// ±íÊ¾ÓÃ»§µÄÊµÌåÀà¡£
+	/// è¡¨ç¤ºç”¨æˆ·çš„å®ä½“ç±»ã€‚
 	/// </summary>
 	[Serializable]
 	public class User : Zongsoft.ComponentModel.NotifyObject
 	{
-		#region ¾²Ì¬×Ö¶Î
+		#region é™æ€å­—æ®µ
 		public static readonly string Administrator = "Administrator";
+		public static readonly string Guest = "Guest";
 		#endregion
 
-		#region ³ÉÔ±×Ö¶Î
+		#region æˆå‘˜å­—æ®µ
 		private int _userId;
 		private string _name;
 		private string _fullName;
@@ -61,7 +62,7 @@ namespace Zongsoft.Security.Membership
 		private DateTime? _suspendedTime;
 		#endregion
 
-		#region ¹¹Ôìº¯Êı
+		#region æ„é€ å‡½æ•°
 		public User(int userId, string name) : this(userId, name, null)
 		{
 		}
@@ -78,9 +79,9 @@ namespace Zongsoft.Security.Membership
 		}
 		#endregion
 
-		#region ¹«¹²ÊôĞÔ
+		#region å…¬å…±å±æ€§
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§±àºÅ¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·ç¼–å·ã€‚
 		/// </summary>
 		public int UserId
 		{
@@ -90,12 +91,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _userId, value, () => this.UserId);
+				this.SetPropertyValue(() => this.UserId, ref _userId, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§Ãû¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·åã€‚
 		/// </summary>
 		public string Name
 		{
@@ -108,12 +109,12 @@ namespace Zongsoft.Security.Membership
 				if(string.IsNullOrWhiteSpace(value))
 					throw new ArgumentNullException();
 
-				this.SetValue(ref _name, value.Trim(), () => this.Name);
+				this.SetPropertyValue(() => this.Name, ref _name, value.Trim());
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§È«³Æ¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·å…¨ç§°ã€‚
 		/// </summary>
 		public string FullName
 		{
@@ -123,12 +124,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _fullName, value, () => this.FullName);
+				this.SetPropertyValue(() => this.FullName, ref _fullName, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃµ±Ç°ÓÃ»§ËùÊôµÄÃüÃû¿Õ¼ä¡£
+		/// è·å–æˆ–è®¾ç½®å½“å‰ç”¨æˆ·æ‰€å±çš„å‘½åç©ºé—´ã€‚
 		/// </summary>
 		public string Namespace
 		{
@@ -138,12 +139,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _namespace, value, () => this.Namespace);
+				this.SetPropertyValue(() => this.Namespace, ref _namespace, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃ¶ÔÓÃ»§µÄÃèÊöÎÄ±¾¡£
+		/// è·å–æˆ–è®¾ç½®å¯¹ç”¨æˆ·çš„æè¿°æ–‡æœ¬ã€‚
 		/// </summary>
 		public string Description
 		{
@@ -153,12 +154,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _description, value, () => this.Description);
+				this.SetPropertyValue(() => this.Description, ref _description, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§¶ÔÓ¦µÄÖ÷ÌåĞÅÏ¢¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·å¯¹åº”çš„ä¸»ä½“æ ‡è¯†ã€‚
 		/// </summary>
 		public string Principal
 		{
@@ -168,12 +169,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _principal, value, () => this.Principal);
+				this.SetPropertyValue(() => this.Principal, ref _principal, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§µÄµç×ÓÓÊÏäµØÖ·£¬ÓÊÏäµØÖ·²»ÔÊĞíÖØ¸´¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·çš„ç”µå­é‚®ç®±åœ°å€ï¼Œé‚®ç®±åœ°å€ä¸å…è®¸é‡å¤ã€‚
 		/// </summary>
 		public string Email
 		{
@@ -183,12 +184,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _email, value, () => this.Email);
+				this.SetPropertyValue(() => this.Email, ref _email, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§µÄÊÖ»úºÅÂë¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·çš„æ‰‹æœºå·ç ã€‚
 		/// </summary>
 		public string PhoneNumber
 		{
@@ -198,12 +199,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _phoneNumber, value, () => this.PhoneNumber);
+				this.SetPropertyValue(() => this.PhoneNumber, ref _phoneNumber, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§ÊÇ·ñ±»½ûÓÃ±êÖ¾¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·æ˜¯å¦è¢«ç¦ç”¨æ ‡å¿—ã€‚
 		/// </summary>
 		public bool Suspended
 		{
@@ -213,12 +214,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _suspended, value, () => this.Suspended);
+				this.SetPropertyValue(() => this.Suspended, ref _suspended, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÓÃ»§ÊÇ·ñÒÑ±»ÉóºËÍ¨¹ı¡£
+		/// è·å–æˆ–è®¾ç½®ç”¨æˆ·æ˜¯å¦å·²è¢«å®¡æ ¸é€šè¿‡ã€‚
 		/// </summary>
 		public bool Approved
 		{
@@ -228,12 +229,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _approved, value, () => this.Approved);
+				this.SetPropertyValue(() => this.Approved, ref _approved, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÒ»¸öÖµ£¬Ö¸Ê¾µ±¸ÃÓÃ»§±»Ê×´ÎÊ¹ÓÃÊ±ÊÇ·ñ±ØĞëĞŞ¸ÄÃÜÂë¡£
+		/// è·å–æˆ–è®¾ç½®ä¸€ä¸ªå€¼ï¼ŒæŒ‡ç¤ºå½“è¯¥ç”¨æˆ·è¢«é¦–æ¬¡ä½¿ç”¨æ—¶æ˜¯å¦å¿…é¡»ä¿®æ”¹å¯†ç ã€‚
 		/// </summary>
 		public bool ChangePasswordOnFirstTime
 		{
@@ -243,12 +244,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _changePasswordOnFirstTime, value, () => this.ChangePasswordOnFirstTime);
+				this.SetPropertyValue(() => this.ChangePasswordOnFirstTime, ref _changePasswordOnFirstTime, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÒ»¸öÖµ£¬Ö¸Ê¾¸ÃÓÃ»§ÃÜÂëÑéÖ¤Ê§°ÜÔÊĞí³¢ÊÔµÄ×î´ó´ÎÊı¡£
+		/// è·å–æˆ–è®¾ç½®ä¸€ä¸ªå€¼ï¼ŒæŒ‡ç¤ºè¯¥ç”¨æˆ·å¯†ç éªŒè¯å¤±è´¥å…è®¸å°è¯•çš„æœ€å¤§æ¬¡æ•°ã€‚
 		/// </summary>
 		public byte MaxInvalidPasswordAttempts
 		{
@@ -258,12 +259,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _maxInvalidPasswordAttempts, value, () => this.MaxInvalidPasswordAttempts);
+				this.SetPropertyValue(() => this.MaxInvalidPasswordAttempts, ref _maxInvalidPasswordAttempts, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÒ»¸öÖµ£¬Ö¸Ê¾¸ÃÓÃ»§ÉèÖÃÃÜÂëµÄ×îĞ¡³¤¶È¡£
+		/// è·å–æˆ–è®¾ç½®ä¸€ä¸ªå€¼ï¼ŒæŒ‡ç¤ºè¯¥ç”¨æˆ·è®¾ç½®å¯†ç çš„æœ€å°é•¿åº¦ã€‚
 		/// </summary>
 		public byte MinRequiredPasswordLength
 		{
@@ -273,12 +274,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _minRequiredPasswordLength, value, () => this.MinRequiredPasswordLength);
+				this.SetPropertyValue(() => this.MinRequiredPasswordLength, ref _minRequiredPasswordLength, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃÒ»¸öÖµ£¬Ö¸Ê¾µ±¸ÃÓÃ»§ÃÜÂëÑéÖ¤Ê§°Ü´ÎÊı´ïµ½<see cref="MaxInvalidPasswordAttempts"/>ÊôĞÔÖ¸¶¨µÄÊıÖµºó£¬ÔÙ´Î½øĞĞÃÜÂëÑéÖ¤µÄ¼ä¸ôÊ±³¤(µ¥Î»£ºÃë)¡£
+		/// è·å–æˆ–è®¾ç½®ä¸€ä¸ªå€¼ï¼ŒæŒ‡ç¤ºå½“è¯¥ç”¨æˆ·å¯†ç éªŒè¯å¤±è´¥æ¬¡æ•°è¾¾åˆ°<see cref="MaxInvalidPasswordAttempts"/>å±æ€§æŒ‡å®šçš„æ•°å€¼åï¼Œå†æ¬¡è¿›è¡Œå¯†ç éªŒè¯çš„é—´éš”æ—¶é•¿(å•ä½ï¼šç§’)ã€‚
 		/// </summary>
 		public int PasswordAttemptWindow
 		{
@@ -288,12 +289,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _passwordAttemptWindow, value, () => this.PasswordAttemptWindow);
+				this.SetPropertyValue(() => this.PasswordAttemptWindow, ref _passwordAttemptWindow, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃµ±Ç°ÓÃ»§ÃÜÂëµÄ¹ıÆÚÊ±¼ä¡£
+		/// è·å–æˆ–è®¾ç½®å½“å‰ç”¨æˆ·å¯†ç çš„è¿‡æœŸæ—¶é—´ã€‚
 		/// </summary>
 		public DateTime PasswordExpires
 		{
@@ -303,12 +304,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _passwordExpires, value, () => this.PasswordExpires);
+				this.SetPropertyValue(() => this.PasswordExpires, ref _passwordExpires, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃµ±Ç°ÓÃ»§µÄ´´½¨Ê±¼ä¡£
+		/// è·å–æˆ–è®¾ç½®å½“å‰ç”¨æˆ·çš„åˆ›å»ºæ—¶é—´ã€‚
 		/// </summary>
 		public DateTime CreatedTime
 		{
@@ -318,12 +319,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _createdTime, value, () => this.CreatedTime);
+				this.SetPropertyValue(() => this.CreatedTime, ref _createdTime, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃµ±Ç°ÓÃ»§±»ÉóºËÍ¨¹ıµÄÊ±¼ä¡£
+		/// è·å–æˆ–è®¾ç½®å½“å‰ç”¨æˆ·è¢«å®¡æ ¸é€šè¿‡çš„æ—¶é—´ã€‚
 		/// </summary>
 		public DateTime? ApprovedTime
 		{
@@ -333,12 +334,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _approvedTime, value, () => this.ApprovedTime);
+				this.SetPropertyValue(() => this.ApprovedTime, ref _approvedTime, value);
 			}
 		}
 
 		/// <summary>
-		/// »ñÈ¡»òÉèÖÃµ±Ç°ÓÃ»§±»½ûÓÃµÄÊ±¼ä¡£
+		/// è·å–æˆ–è®¾ç½®å½“å‰ç”¨æˆ·è¢«ç¦ç”¨çš„æ—¶é—´ã€‚
 		/// </summary>
 		public DateTime? SuspendedTime
 		{
@@ -348,12 +349,12 @@ namespace Zongsoft.Security.Membership
 			}
 			set
 			{
-				this.SetValue(ref _suspendedTime, value, () => this.SuspendedTime);
+				this.SetPropertyValue(() => this.SuspendedTime, ref _suspendedTime, value);
 			}
 		}
 		#endregion
 
-		#region ÖØĞ´·½·¨
+		#region é‡å†™æ–¹æ³•
 		public override bool Equals(object obj)
 		{
 			if(obj == null || obj.GetType() != this.GetType())
@@ -378,18 +379,19 @@ namespace Zongsoft.Security.Membership
 		}
 		#endregion
 
-		#region ¾²Ì¬·½·¨
-		public static bool IsFixedUser(User user)
+		#region é™æ€æ–¹æ³•
+		public static bool IsBuiltin(User user)
 		{
 			if(user == null)
 				return false;
 
-			return IsFixedUser(user.Name);
+			return IsBuiltin(user.Name);
 		}
 
-		public static bool IsFixedUser(string userName)
+		public static bool IsBuiltin(string userName)
 		{
-			return string.Equals(userName, User.Administrator, StringComparison.OrdinalIgnoreCase);
+			return string.Equals(userName, User.Administrator, StringComparison.OrdinalIgnoreCase) ||
+			       string.Equals(userName, User.Guest, StringComparison.OrdinalIgnoreCase);
 		}
 		#endregion
 	}

@@ -34,120 +34,54 @@ namespace Zongsoft.Security.Membership
 	/// </summary>
 	public interface IRoleProvider
 	{
-		#region 角色管理
 		/// <summary>
-		/// 获取指定名称对应的角色对象。
+		/// 获取指定编号对应的角色对象。
 		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="roleId">要查找的角色名。</param>
-		/// <returns>返回由<paramref name="roleId"/>参数指定的角色对象，如果没有找到指定名称的角色则返回空。</returns>
-		Role GetRole(string certificationId, int roleId);
+		/// <param name="roleId">要查找的角色编号。</param>
+		/// <returns>返回由<paramref name="roleId"/>参数指定的角色对象，如果没有找到指定编号的角色则返回空。</returns>
+		Role GetRole(int roleId);
 
 		/// <summary>
 		/// 获取当前命名空间中的所有角色。
 		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <returns>返回当前系统中的所有角色对象集。</returns>
-		IEnumerable<Role> GetAllRoles(string certificationId);
+		/// <param name="namespace">要获取的用户集所属的命名空间。</param>
+		/// <param name="paging">查询的分页设置，默认为第一页。</param>
+		/// <returns>返回当前命名空间中的所有角色对象集。</returns>
+		IEnumerable<Role> GetAllRoles(string @namespace, Zongsoft.Data.Paging paging = null);
 
 		/// <summary>
-		/// 获取指定成员的父级角色集。
+		/// 删除指定编号集的多个角色。
 		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="memberId">要搜索的成员编号(用户或角色)。</param>
-		/// <param name="memberType">要搜索的成员类型。</param>
-		/// <returns>返回指定成员的父级角色集。</returns>
-		IEnumerable<Role> GetRoles(string certificationId, int memberId, MemberType memberType);
-
-		/// <summary>
-		/// 获取指定角色成员的上级角色集。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="memberId">要搜索的角色成员编号。</param>
-		/// <param name="memberType">要搜索的角色成员类型。</param>
-		/// <param name="depth">对搜索角色成员隶属关系的遍历深度，如果不限深度则为负数。</param>
-		/// <returns>返回指定成员的上级角色集。</returns>
-		IEnumerable<Role> GetRoles(string certificationId, int memberId, MemberType memberType, int depth);
-
-		/// <summary>
-		/// 删除指定名称集的多个角色。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
 		/// <param name="roleIds">要删除的角色编号集合。</param>
 		/// <returns>如果删除成功则返回删除的数量，否则返回零。</returns>
-		int DeleteRoles(string certificationId, params int[] roleIds);
+		int DeleteRoles(params int[] roleIds);
 
 		/// <summary>
 		/// 创建单个或者多个角色。
 		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
+		/// <param name="roles">要创建的角色对象数组。</param>
+		/// <returns>返回创建成功的角色数量。</returns>
+		int CreateRoles(params Role[] roles);
+
+		/// <summary>
+		/// 创建单个或者多个角色。
+		/// </summary>
 		/// <param name="roles">要创建的角色对象集。</param>
-		/// <remarks>如果创建失败则抛出异常，并且整个事务会被回滚。</remarks>
-		void CreateRoles(string certificationId, IEnumerable<Role> roles);
+		/// <returns>返回创建成功的角色数量。</returns>
+		int CreateRoles(IEnumerable<Role> roles);
 
 		/// <summary>
 		/// 更新单个或多个角色信息。
 		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
+		/// <param name="roles">要更新的角色对象数组。</param>
+		/// <returns>返回更新成功的角色数量。</returns>
+		int UpdateRoles(params Role[] roles);
+
+		/// <summary>
+		/// 更新单个或多个角色信息。
+		/// </summary>
 		/// <param name="roles">要更新的角色对象集。</param>
-		/// <remarks>如果在批量更新中，如果待更新的角色对象在数据源中不存在则该项操作将被忽略，而不影响本次操作中的其他对象的更新。</remarks>
-		void UpdateRoles(string certificationId, IEnumerable<Role> roles);
-		#endregion
-
-		#region 成员管理
-		/// <summary>
-		/// 确定指定的用户是否属于指定的角色。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="userId">要检查的用户编号。</param>
-		/// <param name="roleId">要确认的角色编号。</param>
-		/// <returns>如果指定的用户是指定角色的成员，则为真(true)；否则为假(false)。</returns>
-		bool InRole(string certificationId, int userId, int roleId);
-
-		/// <summary>
-		/// 获取指定角色的直属成员集。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="roleId">要搜索的角色编号。</param>
-		/// <returns>返回隶属于指定角色的直属子级成员集。</returns>
-		IEnumerable<Member> GetMembers(string certificationId, int roleId);
-
-		/// <summary>
-		/// 获取指定角色的成员集。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="roleId">要搜索的角色编号。</param>
-		/// <param name="depth">对搜索角色成员隶属关系的遍历深度，如果不限深度则为负数。</param>
-		/// <returns>返回隶属于指定角色下特定深度的所有成员集。</returns>
-		IEnumerable<Member> GetMembers(string certificationId, int roleId, int depth);
-
-		/// <summary>
-		/// 删除隶属于指定角色下的成员。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="roleId">要删除的角色成员所属的角色名称。</param>
-		/// <param name="memberId">要删除的角色成员名称。</param>
-		/// <param name="memberType">要删除的角色成员类型。</param>
-		void DeleteMember(string certificationId, int roleId, int memberId, MemberType memberType);
-
-		/// <summary>
-		/// 创建隶属于指定角色下的成员。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="roleId">待创建的角色成员所属的角色编号。</param>
-		/// <param name="memberId">带创建的角色成员编号。</param>
-		/// <param name="memberType">带创建的角色成员类型。</param>
-		void CreateMember(string certificationId, int roleId, int memberId, MemberType memberType);
-
-		/// <summary>
-		/// 设置更新指定角色下的所有成员。
-		/// </summary>
-		/// <param name="certificationId">调用者的安全凭证号。</param>
-		/// <param name="members">要更新的角色成员集。</param>
-		/// <remarks>
-		///		<para>该方法默认以覆盖方式进行更新。即先清空指定角色下的所有成员记录，然后再将<paramref name="members"/>参数指定的成员插入其中。</para>
-		/// </remarks>
-		void SetMembers(string certificationId, IEnumerable<Member> members);
-		#endregion
+		/// <returns>返回更新成功的角色数量。</returns>
+		int UpdateRoles(IEnumerable<Role> roles);
 	}
 }

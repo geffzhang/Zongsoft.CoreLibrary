@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2014 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.CoreLibrary.
  *
@@ -89,42 +89,46 @@ namespace Zongsoft.Data
 		#region 查询方法
 		public IEnumerable<T> Select<T>(string name, ICondition condition = null)
 		{
-			return this.Select<T>(name, condition, this.ResolveScope(name, null, typeof(T)), null, null);
+			return this.Select<T>(name, condition, this.ResolveScope(name, null, typeof(T)), null, null, null);
 		}
 
 		public IEnumerable Select(string name,
-						   ICondition condition = null,
-						   string scope = null,
-						   Paging paging = null,
-						   params Sorting[] sorting)
+		                          ICondition condition = null,
+		                          string scope = null,
+		                          Paging paging = null,
+		                          Grouping grouping = null,
+		                          params Sorting[] sorting)
 		{
-			return this.Select<object>(name, condition, this.ResolveScope(name, scope, null), paging, sorting);
+			return this.Select<object>(name, condition, this.ResolveScope(name, scope, null), paging, grouping, sorting);
 		}
 
 		public IEnumerable<T> Select<T>(string name,
-								 ICondition condition = null,
-								 string scope = null,
-								 Paging paging = null,
-								 params Sorting[] sorting)
+		                                ICondition condition = null,
+		                                string scope = null,
+		                                Paging paging = null,
+		                                Grouping grouping = null,
+		                                params Sorting[] sorting)
 		{
-			return this.Select<T>(name, condition, this.ResolveScope(name, scope, typeof(T)), paging, sorting);
+			return this.Select<T>(name, condition, this.ResolveScope(name, scope, typeof(T)), paging, grouping, sorting);
 		}
 
 		public IEnumerable<T> Select<T>(string name,
-								 ICondition condition = null,
-								 Expression<Func<T, object>> includes = null,
-								 Expression<Func<T, object>> excludes = null,
-								 Paging paging = null,
-								 params Sorting[] sorting)
+		                                ICondition condition = null,
+		                                Expression<Func<T, object>> includes = null,
+		                                Expression<Func<T, object>> excludes = null,
+		                                Paging paging = null,
+		                                Grouping grouping = null,
+		                                params Sorting[] sorting)
 		{
-			return this.Select<T>(name, condition, this.ResolveScopeExpression(name, includes, excludes), paging, sorting);
+			return this.Select<T>(name, condition, this.ResolveScopeExpression(name, includes, excludes), paging, grouping, sorting);
 		}
 
 		protected abstract IEnumerable<T> Select<T>(string name,
-								 ICondition condition,
-								 string[] members,
-								 Paging paging,
-								 Sorting[] sorting);
+		                                            ICondition condition,
+		                                            string[] members,
+		                                            Paging paging,
+		                                            Grouping grouping,
+		                                            Sorting[] sorting);
 		#endregion
 
 		#region 删除方法
@@ -153,9 +157,12 @@ namespace Zongsoft.Data
 		#endregion
 
 		#region 插入方法
-		public int Insert<T>(string name, T entity, string scope = null)
+		public int Insert(string name, object entity, string scope = null)
 		{
-			return this.Insert(name, entity, this.ResolveScope(name, scope, typeof(T)));
+			if(entity == null)
+				throw new ArgumentNullException("entity");
+
+			return this.Insert(name, entity, this.ResolveScope(name, scope, entity.GetType()));
 		}
 
 		public int Insert<T>(string name, T entity, Expression<Func<T, object>> includes, Expression<Func<T, object>> excludes = null)
@@ -163,9 +170,9 @@ namespace Zongsoft.Data
 			return this.Insert(name, entity, this.ResolveScopeExpression(name, includes, excludes));
 		}
 
-		protected virtual int Insert<T>(string name, T entity, string[] members)
+		protected virtual int Insert(string name, object entity, string[] members)
 		{
-			return this.Insert<T>(name, new T[] { entity }, members);
+			return this.Insert(name, new object[] { entity }, members);
 		}
 
 		public int Insert<T>(string name, IEnumerable<T> entities, string scope = null)
@@ -182,9 +189,12 @@ namespace Zongsoft.Data
 		#endregion
 
 		#region 更新方法
-		public int Update<T>(string name, T entity, ICondition condition = null)
+		public int Update(string name, object entity, ICondition condition = null)
 		{
-			return this.Update(name, entity, condition, this.ResolveScope(name, null, typeof(T)));
+			if(entity == null)
+				throw new ArgumentNullException("entity");
+
+			return this.Update(name, entity, condition, this.ResolveScope(name, null, entity.GetType()));
 		}
 
 		/// <summary>
@@ -195,9 +205,12 @@ namespace Zongsoft.Data
 		/// <param name="condition">要更新的条件子句，如果为空(null)则根据实体的主键进行更新。</param>
 		/// <param name="scope">指定的要更新的和排除更新的属性名列表，如果指定的是多个属性则属性名之间使用逗号(,)分隔；要排除的属性以减号(-)打头，星号(*)表示所有属性，感叹号(!)表示排除所有属性；如果未指定该参数则默认只会更新所有单值属性而不会更新导航属性。</param>
 		/// <returns>返回受影响的记录行数，执行成功返回大于零的整数，失败则返回负数。</returns>
-		public int Update<T>(string name, T entity, ICondition condition, string scope = null)
+		public int Update(string name, object entity, ICondition condition, string scope = null)
 		{
-			return this.Update(name, entity, condition, this.ResolveScope(name, scope, typeof(T)));
+			if(entity == null)
+				throw new ArgumentNullException("entity");
+
+			return this.Update(name, entity, condition, this.ResolveScope(name, scope, entity.GetType()));
 		}
 
 		public int Update<T>(string name, T entity, ICondition condition, Expression<Func<T, object>> includes = null, Expression<Func<T, object>> excludes = null)
@@ -205,9 +218,9 @@ namespace Zongsoft.Data
 			return this.Update(name, entity, condition, this.ResolveScopeExpression(name, includes, excludes));
 		}
 
-		protected virtual int Update<T>(string name, T entity, ICondition condition, string[] members)
+		protected virtual int Update(string name, object entity, ICondition condition, string[] members)
 		{
-			return this.Update<T>(name, new T[] { entity }, condition, members);
+			return this.Update(name, new object[] { entity }, condition, members);
 		}
 
 		public int Update<T>(string name, IEnumerable<T> entities, ICondition condition = null)
@@ -242,15 +255,7 @@ namespace Zongsoft.Data
 
 		protected virtual bool IsScalarType(Type type)
 		{
-			if(type.IsArray)
-				return IsScalarType(type.GetElementType());
-
-			if(type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-				return IsScalarType(type.GetGenericArguments()[0]);
-
-			return type.IsPrimitive || type.IsEnum ||
-				   type == typeof(string) || type == typeof(DateTime) ||
-				   type == typeof(Guid) || type == typeof(TimeSpan);
+			return Zongsoft.Common.TypeExtension.IsScalarType(type);
 		}
 		#endregion
 
@@ -260,38 +265,43 @@ namespace Zongsoft.Data
 			if(string.IsNullOrWhiteSpace(entityName))
 				throw new ArgumentNullException("entityName");
 
-			var entityDescriptor = _entityCache.GetOrAdd(entityType ?? this.GetEntityType(entityName), type => new EntityDesciptior(this, entityName, type));
-			return this.ResolveScope(entityDescriptor, scope).ToArray();
+			var isWeakType = entityType != null && (typeof(IDictionary).IsAssignableFrom(entityType) || Zongsoft.Common.TypeExtension.IsAssignableFrom(typeof(IDictionary<,>), entityType));
+
+			if(entityType == null || isWeakType)
+				entityType = this.GetEntityType(entityName);
+
+			var entityDescriptor = _entityCache.GetOrAdd(entityType, type => new EntityDesciptior(this, entityName, type));
+			return this.ResolveScope(entityDescriptor, scope, isWeakType).ToArray();
 		}
 
-		private HashSet<string> ResolveScope(EntityDesciptior entity, string scope)
+		private HashSet<string> ResolveScope(EntityDesciptior entity, string scope, bool isWeakType)
 		{
 			var result = new HashSet<string>(entity.Properties.Where(p => p.IsScalarType).Select(p => p.PropertyName), StringComparer.OrdinalIgnoreCase);
 
 			if(string.IsNullOrWhiteSpace(scope))
 				return result;
 
-			var parts = scope.Split(',', ';');
+			var members = scope.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
 
-			for(int i = 0; i < parts.Length; i++)
+			for(int i = 0; i < members.Length; i++)
 			{
-				var part = parts[i].Trim();
+				var member = members[i].Trim();
 
-				if(part.Length == 0)
+				if(member.Length == 0)
 					continue;
 
-				switch(part[0])
+				switch(member[0])
 				{
 					case '-':
 					case '!':
-						if(part.Length > 1)
-							result.Remove(part.Substring(1));
+						if(member.Length > 1)
+							result.Remove(member.Substring(1));
 						else
 							result.Clear();
 
 						break;
 					case '*':
-						if(part.Length != 1)
+						if(member.Length != 1)
 							throw new ArgumentException("scope");
 
 						result.UnionWith(entity.Properties.SelectMany(p =>
@@ -300,16 +310,40 @@ namespace Zongsoft.Data
 								return new string[] { p.PropertyName };
 
 							var list = new List<string>();
-							this.GetComplexPropertyMembers(entity.EntityName, p.PropertyName, p.PropertyType, list);
+							this.GetComplexPropertyMembers(entity.EntityName, p.PropertyName, p.PropertyType, list, true);
 							return list.ToArray();
 						}));
 
 						break;
 					default:
-						if((part[0] >= 'A' && part[0] <= 'Z') || (part[0] >= 'a' && part[0] <= 'z') || part[0] == '_')
-							result.Add(part);
+						if((member[0] >= 'A' && member[0] <= 'Z') || (member[0] >= 'a' && member[0] <= 'z') || member[0] == '_')
+						{
+							var property = entity.Properties.FirstOrDefault(p => string.Equals(p.PropertyName, member, StringComparison.OrdinalIgnoreCase));
+
+							if(property == null)
+							{
+								if(isWeakType)
+								{
+									result.Add(member);
+									continue;
+								}
+
+								throw new ArgumentException(string.Format("The '{0}' property is not exists in the '{1}' entity.", member, entity.EntityName));
+							}
+
+							if(property.IsScalarType)
+								result.Add(member);
+							else
+							{
+								var list = new List<string>();
+								this.GetComplexPropertyMembers(entity.EntityName, property.PropertyName, property.PropertyType, list, false);
+								result.UnionWith(list);
+							}
+						}
 						else
-							throw new ArgumentException("scope");
+						{
+							throw new ArgumentException(string.Format("Invalid '{0}' member in the '{1}' scope.", member, scope));
+						}
 
 						break;
 				}
@@ -318,7 +352,7 @@ namespace Zongsoft.Data
 			return result;
 		}
 
-		private void GetComplexPropertyMembers(string entityName, string memberPrefix, Type memberType, ICollection<string> collection)
+		private void GetComplexPropertyMembers(string entityName, string memberPrefix, Type memberType, ICollection<string> collection, bool recursive)
 		{
 			var entityDescriptor = _entityCache.GetOrAdd(memberType, type => new EntityDesciptior(this, entityName + "!" + memberPrefix, type));
 
@@ -326,8 +360,8 @@ namespace Zongsoft.Data
 			{
 				if(this.IsScalarType(property.PropertyType))
 					collection.Add(memberPrefix + "." + property.PropertyName);
-				else
-					GetComplexPropertyMembers(entityName, memberPrefix + "." + property.PropertyName, property.PropertyType, collection);
+				else if(recursive)
+					GetComplexPropertyMembers(entityName, memberPrefix + "." + property.PropertyName, property.PropertyType, collection, recursive);
 			}
 		}
 
@@ -375,6 +409,9 @@ namespace Zongsoft.Data
 				}
 				return list.ToArray();
 			}
+
+			if(expression.NodeType == ExpressionType.Convert && expression.Type == typeof(object))
+				return ResolveExpression(((UnaryExpression)expression).Operand, parameter);
 
 			throw new NotSupportedException();
 		}

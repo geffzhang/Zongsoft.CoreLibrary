@@ -59,6 +59,7 @@ namespace Zongsoft.Common
 		///		<para>除了 <see cref="System.Type.IsAssignableFrom"/> 支持的特性外，增加了如下特性：</para>
 		///		<example>
 		///		<code>
+		///		TypeExtension.IsAssignableFrom(typeof(IDictionary&lt;,&gt;), typeof(IDictionary&lt;string, object&gt;));	// true
 		///		TypeExtension.IsAssignableFrom(typeof(IDictionary&lt;,&gt;), typeof(Dictionary&lt;string, object&gt;));	// true
 		///		TypeExtension.IsAssignableFrom(typeof(Dictionary&lt;,&gt;), typeof(Dictioanry&lt;string, int&gt;));		//true
 		///		
@@ -83,7 +84,17 @@ namespace Zongsoft.Common
 				IEnumerable<Type> baseTypes = null;
 
 				if(type.IsInterface)
-					baseTypes = instanceType.GetInterfaces();
+				{
+					if(instanceType.IsInterface)
+					{
+						baseTypes = new List<Type>(new Type[] { instanceType });
+						((List<Type>)baseTypes).AddRange(instanceType.GetInterfaces());
+					}
+					else
+					{
+						baseTypes = instanceType.GetInterfaces();
+					}
+				}
 				else
 				{
 					baseTypes = new List<Type>();
@@ -110,6 +121,23 @@ namespace Zongsoft.Common
 			}
 
 			return type.IsAssignableFrom(instanceType);
+		}
+
+		public static bool IsScalarType(this Type type)
+		{
+			if(type == null)
+				throw new ArgumentNullException("type");
+
+			if(type.IsArray)
+				return IsScalarType(type.GetElementType());
+
+			if(type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+				return IsScalarType(type.GetGenericArguments()[0]);
+
+			return type.IsPrimitive || type.IsEnum ||
+			       type == typeof(string) || type == typeof(decimal) ||
+			       type == typeof(DateTime) || type == typeof(TimeSpan) ||
+			       type == typeof(DateTimeOffset) || type == typeof(Guid);
 		}
 
 		public static Type GetType(string typeName, bool throwOnError = false, bool ignoreCase = true)

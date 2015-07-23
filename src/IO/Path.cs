@@ -34,26 +34,35 @@ namespace Zongsoft.IO
 	/// 表示不依赖操作系统的路径。
 	/// </summary>
 	/// <remarks>
-	///		<para>路径格式分为<seealso cref="DirectoryInfo.Schema"/>和<seealso cref="DirectoryInfo.FullPath"/>这两个部分，其中 Schema 与 Path 中间使用冒号(:)分隔，路径分层使用正斜杠(/)分隔。如果是目录的话则应该以正斜杠结尾。路径示例如下：</para>
+	///		<para>路径格式分为<seealso cref="Path.Schema"/>和<seealso cref="Path.FullPath"/>这两个部分，中间使用冒号(:)分隔，路径各层级间使用正斜杠(/)进行分隔。如果是目录路径则以正斜杠(/)结尾。</para>
+	///		<para>其中<seealso cref="Path.Schema"/>可以省略，如果为目录路径，则<see cref="Path.FileName"/>属性为空或空字符串("")。常用路径示例如下：</para>
 	///		<list type="bullet">
 	///			<item>
-	///				<term>某个文件：zfs:/data/attachments/2014/07/file-name.ext</term>
+	///				<term>某个文件的<see cref="Url"/>：zfs:/data/attachments/2014/07/file-name.ext</term>
 	///			</item>
 	///			<item>
-	///				<term>某个本地文件：zfs.local:/data/attachments/2014/07/file-name.ext</term>
+	///				<term>某个本地文件的<see cref="Url"/>：zfs.local:/data/attachments/2014/07/file-name.ext</term>
 	///			</item>
 	///			<item>
-	///				<term>某个分布式文件：zfs.distributed:/data/attachments/file-name.ext</term>
+	///				<term>某个分布式文件的<see cref="Url"/>：zfs.distributed:/data/attachments/file-name.ext</term>
 	///			</item>
 	///			<item>
-	///				<term>某个目录：zfs:/data/attachments/2014/07/</term>
+	///				<term>某个目录的<see cref="Url"/>：zfs:/data/attachments/2014/07/</term>
+	///			</item>
+	///			<item>
+	///				<term>未指定模式(Schema)的<see cref="Url"/>：/data/attachements/images/</term>
 	///			</item>
 	///		</list>
 	/// </remarks>
-	public class Path
+	public sealed class Path
 	{
+		#region 常量定义
+		private const string SCHEMA_REGEX = @"\s*((?<schema>[A-Za-z]+(\.[A-Za-z_\-]+)?):)?";
+		private const string PATH_REGEX = @"(?<path>(?<part>[/\\][^/\\\*\?:]+)*(?<part>[/\\])?)\s*";
+		#endregion
+
 		#region 私有变量
-		private static readonly Regex _regex = new Regex(@"(?<schema>\w+(\.\w+)?)\:(?<path>(?<part>/[^/\\\*\?]+)+/?)", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
+		private static readonly Regex _regex = new Regex("^" + SCHEMA_REGEX + PATH_REGEX + "$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
 		#endregion
 
 		#region 成员字段
@@ -70,28 +79,23 @@ namespace Zongsoft.IO
 			if(string.IsNullOrWhiteSpace(originalString))
 				throw new ArgumentNullException("originalString");
 
-			if(string.IsNullOrWhiteSpace(schema))
-				throw new ArgumentNullException("schema");
+			_originalString = originalString.Trim();
+			_schema = schema == null ? string.Empty : schema.Trim().ToLowerInvariant();
 
 			if(string.IsNullOrWhiteSpace(fullPath))
-				throw new ArgumentNullException("fullPath");
+			{
+				_fullPath = "/";
+				_directoryName = "/";
+				_fileName = string.Empty;
 
-			_originalString = originalString.Trim();
-			_schema = schema.Trim();
+				return;
+			}
+
 			_fullPath = fullPath.Trim();
 
-			var parts = fullPath.Split('/');
-
-			if(fullPath.EndsWith("/"))
-			{
-				_fileName = string.Empty;
-				_directoryName = _fullPath;
-			}
-			else
-			{
-				_fileName = parts[parts.Length - 1].Trim();
-				_directoryName = string.Join("/", parts);
-			}
+			var parts = _fullPath.Split('/', '\\');
+			_fileName = parts[parts.Length - 1];
+			_directoryName = string.Join("/", parts, 0, parts.Length - 1) + "/";
 		}
 		#endregion
 
@@ -127,17 +131,51 @@ namespace Zongsoft.IO
 				return _fullPath;
 			}
 		}
+
+		public string Url
+		{
+			get
+			{
+				return string.IsNullOrEmpty(_schema) ? _fullPath : (_schema + ":" + _fullPath);
+			}
+		}
+
+		public bool IsFile
+		{
+			get
+			{
+				return !string.IsNullOrEmpty(_fileName);
+			}
+		}
+
+		public bool IsDirectory
+		{
+			get
+			{
+				return string.IsNullOrEmpty(_fileName);
+			}
+		}
 		#endregion
 
 		#region 重写方法
 		public override string ToString()
 		{
-			return _originalString;
+			if(string.IsNullOrWhiteSpace(_schema))
+				return _fullPath;
+			else
+				return _schema + ":" + _fullPath;
 		}
 
 		public override int GetHashCode()
 		{
-			return _originalString.GetHashCode();
+			switch(Environment.OSVersion.Platform)
+			{
+				case PlatformID.MacOSX:
+				case PlatformID.Unix:
+					return (_schema + _fullPath).GetHashCode();
+				default:
+					return (_schema + _fullPath.ToLowerInvariant()).GetHashCode();
+			}
 		}
 
 		public override bool Equals(object obj)
@@ -145,7 +183,19 @@ namespace Zongsoft.IO
 			if(obj == null || obj.GetType() != this.GetType())
 				return false;
 
-			return _originalString == ((Path)obj)._originalString;
+			var other = (Path)obj;
+
+			if(!string.Equals(_schema, other._schema))
+				return false;
+
+			switch(Environment.OSVersion.Platform)
+			{
+				case PlatformID.MacOSX:
+				case PlatformID.Unix:
+					return string.Equals(_fullPath, other._fullPath, StringComparison.Ordinal);
+				default:
+					return string.Equals(_fullPath, other._fullPath, StringComparison.OrdinalIgnoreCase);
+			}
 		}
 		#endregion
 
@@ -153,55 +203,41 @@ namespace Zongsoft.IO
 		/// <summary>
 		/// 解析文本格式的路径。
 		/// </summary>
-		/// <param name="path">要解析的路径文本。</param>
-		/// <returns>返回解析成功的<see cref="DirectoryName"/>路径对象。</returns>
-		/// <exception cref="ArgumentNullException">当<paramref name="path"/>参数为空或空白字符串。</exception>
-		/// <exception cref="PathException">当<paramref name="path"/>参数为无效的路径格式。</exception>
-		public static Path Parse(string path)
+		/// <param name="text">要解析的路径文本。</param>
+		/// <returns>返回解析成功的<see cref="Path"/>路径对象。</returns>
+		/// <exception cref="ArgumentNullException">当<paramref name="text"/>参数为空或空白字符串。</exception>
+		/// <exception cref="PathException">当<paramref name="text"/>参数为无效的路径格式。</exception>
+		public static Path Parse(string text)
 		{
-			if(string.IsNullOrWhiteSpace(path))
-				throw new ArgumentNullException("path");
+			if(string.IsNullOrWhiteSpace(text))
+				throw new ArgumentNullException("text");
 
-			var match = _regex.Match(path);
+			string schema, path;
 
-			if(match.Success)
-				return new Path(path, match.Groups["schema"].Value, match.Groups["path"].Value);
+			if(TryParse(text, out schema, out path))
+				return new Path(text, schema, path);
 
-			throw new PathException(path);
+			throw new PathException(text);
 		}
 
 		/// <summary>
 		/// 尝试解析文本格式的路径。
 		/// </summary>
-		/// <param name="path">要解析的路径文本。</param>
-		/// <param name="result">解析成功的<see cref="DirectoryName"/>路径对象。</param>
+		/// <param name="text">要解析的路径文本。</param>
+		/// <param name="result">解析成功的<see cref="Path"/>路径对象。</param>
 		/// <returns>如果解析成功则返回真(True)，否则返回假(False)。</returns>
-		public static bool TryParse(string path, out Path result)
+		public static bool TryParse(string text, out Path result)
 		{
 			result = null;
+			string schema, path;
 
-			if(string.IsNullOrWhiteSpace(path))
-				return false;
+			if(TryParse(text, out schema, out path))
+			{
+				result = new Path(text, schema, path);
+				return true;
+			}
 
-			var match = _regex.Match(path);
-
-			if(match.Success)
-				result = new Path(path, match.Groups["schema"].Value, match.Groups["path"].Value);
-
-			return match.Success;
-		}
-
-		public static string GetSchema(string path)
-		{
-			if(string.IsNullOrWhiteSpace(path))
-				return string.Empty;
-
-			var match = _regex.Match(path);
-
-			if(match.Success)
-				return match.Groups["schema"].Value;
-
-			return string.Empty;
+			return false;
 		}
 
 		public static bool TryParse(string text, out string schema, out string path)
@@ -223,6 +259,32 @@ namespace Zongsoft.IO
 			return match.Success;
 		}
 
+		public static string GetSchema(string text)
+		{
+			if(string.IsNullOrWhiteSpace(text))
+				return string.Empty;
+
+			var match = _regex.Match(text);
+
+			if(match.Success)
+				return match.Groups["schema"].Value;
+
+			return string.Empty;
+		}
+
+		public static string GetPath(string text)
+		{
+			if(string.IsNullOrWhiteSpace(text))
+				return string.Empty;
+
+			var match = _regex.Match(text);
+
+			if(match.Success)
+				return match.Groups["path"].Value;
+
+			return string.Empty;
+		}
+
 		public static string Combine(params string[] parts)
 		{
 			if(parts == null || parts.Length == 0)
@@ -235,7 +297,7 @@ namespace Zongsoft.IO
 				if(string.IsNullOrWhiteSpace(parts[i]))
 					continue;
 
-				var part = parts[i].Replace('\\', '/');
+				var part = parts[i].Replace('\\', '/').Trim();
 
 				if(result.Length == 0)
 					result = part;

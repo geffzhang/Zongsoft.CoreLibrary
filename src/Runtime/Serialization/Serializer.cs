@@ -36,8 +36,8 @@ namespace Zongsoft.Runtime.Serialization
 	public class Serializer : ISerializer, ITextSerializer
 	{
 		#region 静态字段
-		private static ITextSerializer _text = new Serializer(new TextSerializationWriter());
-		private static ITextSerializer _json = new Serializer(new JsonSerializationWriter());
+		private static ITextSerializer _text = new Serializer(new TextSerializationWriter(), new TextSerializationSettings());
+		private static ITextSerializer _json = new Serializer(new JsonSerializationWriter(), new TextSerializationSettings());
 		#endregion
 
 		#region 事件定义
@@ -46,7 +46,7 @@ namespace Zongsoft.Runtime.Serialization
 		#endregion
 
 		#region 成员字段
-		private SerializerSettings _settings;
+		private SerializationSettings _settings;
 		private ISerializationWriter _writer;
 		#endregion
 
@@ -55,13 +55,13 @@ namespace Zongsoft.Runtime.Serialization
 		{
 		}
 
-		public Serializer(ISerializationWriter writer, SerializerSettings settings)
+		public Serializer(ISerializationWriter writer, SerializationSettings settings)
 		{
 			if(writer == null)
 				throw new ArgumentNullException("writer");
 
 			_writer = writer;
-			_settings = settings ?? new SerializerSettings();
+			_settings = settings ?? new SerializationSettings();
 		}
 		#endregion
 
@@ -98,7 +98,7 @@ namespace Zongsoft.Runtime.Serialization
 		#endregion
 
 		#region 公共属性
-		public SerializerSettings Settings
+		public SerializationSettings Settings
 		{
 			get
 			{
@@ -168,25 +168,44 @@ namespace Zongsoft.Runtime.Serialization
 			return (T)this.Deserialize(reader, typeof(T));
 		}
 
-		public string Serialize(object graph)
+		public object Deserialize(string text)
+		{
+			using(var reader = new StringReader(text))
+			{
+				return this.Deserialize(reader);
+			}
+		}
+
+		public object Deserialize(string text, Type type)
+		{
+			using(var reader = new StringReader(text))
+			{
+				return this.Deserialize(reader, type);
+			}
+		}
+
+		public T Deserialize<T>(string text)
+		{
+			using(var reader = new StringReader(text))
+			{
+				return this.Deserialize<T>(reader);
+			}
+		}
+
+		public string Serialize(object graph, TextSerializationSettings settings = null)
 		{
 			if(graph == null)
 				return null;
 
-			using(var stream = new MemoryStream())
+			using(var writer = new StringWriter())
 			{
-				this.Serialize(stream, graph);
+				this.Serialize(writer, graph, settings);
 
-				stream.Position = 0;
-
-				using(var reader = new StreamReader(stream, Encoding.UTF8))
-				{
-					return reader.ReadToEnd();
-				}
+				return writer.ToString();
 			}
 		}
 
-		public void Serialize(TextWriter writer, object graph)
+		public void Serialize(TextWriter writer, object graph, TextSerializationSettings settings = null)
 		{
 			if(writer == null)
 				throw new ArgumentNullException("writer");
@@ -212,7 +231,7 @@ namespace Zongsoft.Runtime.Serialization
 			}
 		}
 
-		public void Serialize(Stream serializationStream, object graph)
+		public void Serialize(Stream serializationStream, object graph, SerializationSettings settings = null)
 		{
 			if(_writer == null)
 				throw new InvalidOperationException("The value of property 'Writer' is null.");
@@ -224,7 +243,7 @@ namespace Zongsoft.Runtime.Serialization
 			this.OnSerializing(new SerializationEventArgs(SerializationDirection.Output, serializationStream, graph));
 
 			//创建序列化上下文对象
-			var context = new SerializationContext(this, serializationStream, graph);
+			var context = new SerializationContext(this, serializationStream, graph, (settings ?? _settings));
 
 			try
 			{
@@ -258,7 +277,7 @@ namespace Zongsoft.Runtime.Serialization
 					return;
 
 				//判断该是否已经达到允许的序列化的层次
-				if(_settings.MaximumDepth > -1 && context.Depth >= _settings.MaximumDepth)
+				if(context.Settings.MaximumDepth > -1 && context.Depth >= context.Settings.MaximumDepth)
 					return;
 
 				//判断该是否需要继续序列化当前对象
@@ -398,12 +417,57 @@ namespace Zongsoft.Runtime.Serialization
 		}
 		#endregion
 
+		#region 静态方法
+		public static bool CanSerialize(object graph)
+		{
+			if(graph == null)
+				return false;
+
+			if(typeof(ISerializable).IsAssignableFrom(graph.GetType()))
+				return true;
+
+			var attribute = (SerializerAttribute)Attribute.GetCustomAttribute(graph.GetType(), typeof(SerializerAttribute));
+
+			return (attribute != null && attribute.Type != null);
+		}
+
+		public static bool TrySerialize(Stream serializationStream, object graph)
+		{
+			if(serializationStream == null)
+				throw new ArgumentNullException("serializationStream");
+
+			if(graph == null)
+				return false;
+
+			if(typeof(ISerializable).IsAssignableFrom(graph.GetType()))
+			{
+				((ISerializable)graph).Serialize(serializationStream);
+				return true;
+			}
+
+			var attribute = (SerializerAttribute)Attribute.GetCustomAttribute(graph.GetType(), typeof(SerializerAttribute));
+
+			if(attribute != null && attribute.Type != null)
+			{
+				var serializer = Activator.CreateInstance(attribute.Type) as ISerializer;
+
+				if(serializer != null)
+				{
+					serializer.Serialize(serializationStream, graph);
+					return true;
+				}
+			}
+
+			return false;
+		}
+		#endregion
+
 		#region 嵌套子类
 		private class ObjectReferenceComparer : System.Collections.IEqualityComparer, IEqualityComparer<object>
 		{
 			public static readonly ObjectReferenceComparer Instance = new ObjectReferenceComparer();
 
-			public bool Equals(object x, object y)
+			public new bool Equals(object x, object y)
 			{
 				return object.ReferenceEquals(x, y);
 			}

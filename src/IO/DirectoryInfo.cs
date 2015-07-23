@@ -2,7 +2,7 @@
  * Authors:
  *   钟峰(Popeye Zhong) <zongsoft@gmail.com>
  *
- * Copyright (C) 2010-2014 Zongsoft Corporation <http://www.zongsoft.com>
+ * Copyright (C) 2010-2015 Zongsoft Corporation <http://www.zongsoft.com>
  *
  * This file is part of Zongsoft.CoreLibrary.
  *
@@ -29,78 +29,39 @@ using System.Collections.Generic;
 
 namespace Zongsoft.IO
 {
-	public class DirectoryInfo : MarshalByRefObject
+	[Serializable]
+	public class DirectoryInfo : PathInfo
 	{
-		#region 成员字段
-		private string _fullPath;
-		private string _name;
-		private DateTime _createdTime;
-		private Dictionary<string, object> _properties;
-		#endregion
-
 		#region 构造函数
-		public DirectoryInfo()
+		protected DirectoryInfo()
 		{
 		}
 
-		public DirectoryInfo(string fullPath, string name, DateTime? createdTime = null)
+		public DirectoryInfo(string path, DateTime? createdTime = null, DateTime? modifiedTime = null, string url = null)
+			: base(path, createdTime, modifiedTime, url)
 		{
-			if(string.IsNullOrWhiteSpace(fullPath))
-				throw new ArgumentNullException("fullPath");
+		}
 
-			_fullPath = fullPath;
-			_name = name;
-
-			if(createdTime.HasValue)
-				_createdTime = createdTime.Value;
+		public DirectoryInfo(Path path, DateTime? createdTime = null, DateTime? modifiedTime = null, string url = null)
+			: base(path, createdTime, modifiedTime, url)
+		{
 		}
 		#endregion
 
-		#region 公共属性
-		public virtual string Name
+		#region 重写属性
+		public override bool IsFile
 		{
 			get
 			{
-				return _name;
-			}
-			protected set
-			{
-				_name = value;
+				return false;
 			}
 		}
 
-		public string FullPath
+		public override bool IsDirectory
 		{
 			get
 			{
-				return _fullPath;
-			}
-			protected set
-			{
-				_fullPath = value;
-			}
-		}
-
-		public DateTime CreatedTime
-		{
-			get
-			{
-				return _createdTime;
-			}
-			protected set
-			{
-				_createdTime = value;
-			}
-		}
-
-		public IDictionary<string, object> Properties
-		{
-			get
-			{
-				if(_properties == null)
-					System.Threading.Interlocked.CompareExchange(ref _properties, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase), null);
-
-				return _properties;
+				return true;
 			}
 		}
 		#endregion
